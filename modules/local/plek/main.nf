@@ -8,8 +8,8 @@ process PLEK {
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-    'community.wave.seqera.io/library/plek:1.2--596e6d28764ac174' :
-    'community.wave.seqera.io/library/plek:1.2--596e6d28764ac174' }"
+    'community.wave.seqera.io/library/plek_numpy_scikit-learn_scipy:ebea7cd00ea7ee71' :
+    'community.wave.seqera.io/library/plek_numpy_scikit-learn_scipy:ebea7cd00ea7ee71' }"
 
     publishDir "${params.outdir}/plek", mode: 'copy'
     
@@ -52,11 +52,11 @@ process PLEK {
     
     # Executar PLEK
     echo "Executando PLEK..." >> ${prefix}.log
-    PLEK \\
-        -fasta ${fasta_file} \\
-        -out ${output_file} \\
-        -thread ${threads} \\
-        ${args} \\
+    python ${plek_script} \
+        -fasta ${fasta_file} \
+        -out ${output_file} \
+        -thread ${threads} \
+        ${args} \
         2>&1 | tee -a ${prefix}.log
     
     # Verificar se o arquivo de saída foi criado
