@@ -195,7 +195,8 @@ workflow NOTTOCODE {
     //
 
     CPC2 (
-        GFFREAD.out.gffread_fasta
+        GFFREAD.out.gffread_fasta,
+        file(params.cpc2)
     )
 
     //
