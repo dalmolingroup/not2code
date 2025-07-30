@@ -7,14 +7,16 @@ process CPC2 {
     label 'process_medium'
     
     conda "${moduleDir}/environment.yml"
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/cpc2:1.0.1--hdfd78af_0' :
-        'quay.io/biocontainers/cpc2:1.0.1--hdfd78af_0' }"
+ container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+    'community.wave.seqera.io/library/cpc2:1.0.1--f139e3bfc23f65fe' :
+    'community.wave.seqera.io/library/cpc2:1.0.1--f139e3bfc23f65fe' }"
     
     publishDir "${params.outdir}/cpc2", mode: 'copy'
     
     input:
     tuple val(meta), path(fasta_file)
+    path cpc2_script
+
     
     output:
     tuple val(meta), path("*.txt"), emit: cpc2_results
@@ -35,19 +37,18 @@ process CPC2 {
     echo "Arquivo FASTA de entrada: ${fasta_file}" >> ${prefix}.log
     echo "Arquivo de saída: ${output_file}" >> ${prefix}.log
     echo "Data/hora de início: \$(date)" >> ${prefix}.log
-    echo "svm models: ${params.cpc2_svm_predict} ${params.cpc2_svm_scale}"
+    echo "Modelos SVM: svm-predict, svm-scale" >> ${prefix}.log
     
     # Contar número de sequências no arquivo FASTA
     seq_count=\$(grep -c "^>" ${fasta_file})
     echo "Número de sequências a serem analisadas: \$seq_count" >> ${prefix}.log
     
-    # Mover modelos para diretório atual
-    ln -s ${params.cpc2_svm_predict} .
-    ln -s ${params.cpc2_svm_scale} .
+    cp /opt/conda/bin/svm-scale .
+    cp /opt/conda/bin/svm-predict .
 
     # Executar CPC2
     echo "Executando CPC2..." >> ${prefix}.log
-    CPC2.py \\
+    ${cpc2_script} \\
         -i ${fasta_file} \\
         -o ${output_file} \\
         ${args} \\
