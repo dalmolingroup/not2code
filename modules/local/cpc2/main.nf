@@ -6,13 +6,14 @@ process CPC2 {
     tag "$meta.id"
     label 'process_medium'
     
-    container 'quay.io/biocontainers/cpc2:1.0.1--py27h6bb024c_0'
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+    'https://depot.galaxyproject.org/singularity/cpc2:1.0.1--hdfd78af_0' :
+    'quay.io/biocontainers/cpc2:1.0.1--hdfd78af_0' }"
     
     publishDir "${params.outdir}/cpc2", mode: 'copy'
     
     input:
-    tuple val(meta), 
-    path(fasta_file)
+    tuple val(meta), path(fasta_file)
     
     output:
     tuple val(meta), path("*.txt"), emit: cpc2_results

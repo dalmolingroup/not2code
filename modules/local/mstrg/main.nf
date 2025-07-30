@@ -5,8 +5,10 @@ nextflow.enable.dsl = 2
 process MSTRG_PREP {
     tag "$meta.id"
     label 'process_low'
-    
-    container 'quay.io/biocontainers/perl:5.32.1'
+
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+    'https://depot.galaxyproject.org/singularity/perl:5.26--2' :
+    'quay.io/biocontainers/perl:5.26--2' }"
     
     input:
     tuple val(meta), path(gtf_file)

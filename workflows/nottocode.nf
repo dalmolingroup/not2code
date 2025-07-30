@@ -8,6 +8,8 @@ include { STRINGTIE_MERGE        } from '../modules/nf-core/stringtie/merge/main
 include { GFFCOMPARE             } from '../modules/nf-core/gffcompare/main'
 include { COMPARE_TRANSCRIPTOMES } from '../modules/local/compare_transcriptomes/main'
 include { GFFREAD                } from '../modules/nf-core/gffread/main'
+include { MSTRG_PREP             } from '../modules/local/mstrg/main'
+include { CPC2                   } from '../modules/local/cpc2/main'
 include { MULTIQC                } from '../modules/nf-core/multiqc/main'
 include { paramsSummaryMap       } from 'plugin/nf-validation'
 include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
@@ -169,12 +171,32 @@ workflow NOTTOCODE {
     )
     ch_versions = ch_versions.mix(COMPARE_TRANSCRIPTOMES.out.versions)
 
-
+    //
+    // Validate, filter, convert and perform various other operations on GFF
+    //
     GFFREAD (
         COMPARE_TRANSCRIPTOMES.out.filtered_gtf,
         genome_fasta
     )
     ch_versions = ch_versions.mix(GFFREAD.out.versions)
+
+    //
+    // Process transcipts names
+    //
+
+    MSTRG_PREP (
+        COMPARE_TRANSCRIPTOMES.out.filtered_gtf,
+        params.mstrg_prep_script
+    )
+    ch_versions = ch_versions.mix(MSTRG_PREP.out.versions)
+
+    //
+    // Protein coding potential
+    //
+
+    CPC2 (
+        GFFREAD.out.gffread_fasta
+    )
 
     //
     // Collate and save software versions
