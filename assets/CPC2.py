@@ -5,16 +5,14 @@
 import sys
 import os
 import re
-if (sys.version_info[0] == 2):
-	import commands
-else:
-	import subprocess
+import commands
 import time
 from optparse import OptionParser,OptionGroup
-import six
+
 import numpy as np
 from Bio.Seq import Seq
 from Bio.SeqUtils import ProtParam
+
 import seqio
 
 def __main():
@@ -87,7 +85,7 @@ class FindCDS:
 		'''
 		while True:
 			try: 
-				codon,index = next(triplet_got)
+				codon,index = triplet_got.next()
 			except StopIteration:
 				break 
 			if codon in starts and codon not in stops:
@@ -98,7 +96,7 @@ class FindCDS:
 				end_extension = False
 				while True:
 					try: 
-						codon,index = next(triplet_got)
+						codon,index = triplet_got.next()
 					except StopIteration:
 						end_extension = True
 						integrity = -1
@@ -254,12 +252,9 @@ def calculate_potential(fasta,strand,output_orf,outfile):
 	'''
 	strinfoAmbiguous = re.compile("X|B|Z|J|U",re.I)
 	ptU = re.compile("U",re.I)
-## merged by Yang Ding on 2019-11-23
-## 1. all python 2-"file"'s are replaced with python 3-"open"'s
-## 2. keep kangyj's check on output_orf
-	ftmp_feat = open(outfile + ".feat","w")
-	ftmp_svm = open(outfile + ".tmp.1","w")
-	ftmp_result = open(outfile,"w")
+	ftmp_feat = file(outfile + ".feat","w")
+	ftmp_svm = file(outfile + ".tmp.1","w")
+	ftmp_result = file(outfile,"w")
 	if output_orf == 1:
 		my_header = ["#ID","transcript_length","peptide_length","Fickett_score","pI","ORF_integrity","ORF_Start","coding_probability","label"]
 	else:
@@ -308,32 +303,19 @@ def calculate_potential(fasta,strand,output_orf,outfile):
 	'''
 		set directories and check depending tools existance
 	'''
-	script_dir, filename = os.path.split(os.path.abspath(sys.argv[0]))
-    data_dir = os.path.join(script_dir, "../data/")
-    lib_dir = os.path.join(script_dir, "../libs/")
-
-    app_svm_scale = "/opt/conda/bin/svm-scale"
-    app_svm_predict = "/opt/conda/bin/svm-predict"
-
-    if not os.path.exists(app_svm_scale):
-        sys.stderr.write("[ERROR] No executable svm-scale on CPC2 path!\n")
-        sys.exit(1)
-
-    if not os.path.exists(app_svm_predict):
-        sys.stderr.write("[ERROR] No executable svm-predict on CPC2 path!\n")
-        sys.exit(1)
-    
+	script_dir,filename = os.path.split(os.path.abspath(sys.argv[0]))
+	data_dir = script_dir + "/../data/"
+	lib_dir = script_dir + "/../libs/"
+	app_svm_scale = lib_dir + "libsvm/libsvm-3.18/svm-scale"
+	app_svm_predict = lib_dir + "libsvm/libsvm-3.18/svm-predict"
+	os.system('test -x '+ app_svm_scale + ' || echo \"[ERROR] No excutable svm-scale on CPC2 path!\" > /dev/stderr')
+	os.system('test -x '+ app_svm_predict + ' || echo \"[ERROR] No excutable svm-predict on CPC2 path!\" > /dev/stderr')
+	
 	cmd = app_svm_scale + ' -r ' + data_dir + 'cpc2.range ' + outfile + '.tmp.1 > ' + outfile + '.tmp.2 &&'
 	cmd = cmd + app_svm_predict + ' -b 1 -q ' + outfile + '.tmp.2 ' + data_dir + 'cpc2.model ' + outfile + '.tmp.out'
 	#cmd = cmd + 'awk -vOFS="\\t" \'{if ($1 == 1){print $2,"coding"} else if ($1 == 0){print $2,"noncoding"}}\' ' + outfile + '.tmp.1 > ' + outfile + '.tmp.2 &&'
 	#cmd = cmd + 'paste ' + outfile + '.feat ' + outfile + '.tmp.2 >>' + outfile
-	if (sys.version_info[0] == 2):
-		(exitstatus, outtext) = commands.getstatusoutput(cmd)
-	else:
-		print("[DEBUG] Executing:", cmd)
-        (exitstatus, outtext) = subprocess.getstatusoutput(cmd)
-        print("[DEBUG] Status:", exitstatus)
-        print("[DEBUG] Output:", outtext)
+	(exitstatus, outtext) = commands.getstatusoutput(cmd)	
 	
 	'''deal with the output'''
 	#print outfile + '.tmp.out'
@@ -370,10 +352,7 @@ def calculate_potential(fasta,strand,output_orf,outfile):
 	if exitstatus == 0:
 		os.system('rm -f ' + outfile + '.tmp.1 ' + outfile + '.tmp.2 ' + outfile + '.tmp.out ' + outfile)
 		rm_cmd = "rm -f " + outfile + '.feat'
-		if (sys.version_info[0] == 2):
-			commands.getstatusoutput(rm_cmd)
-		else:
-			subprocess.getstatusoutput(rm_cmd)
+		commands.getstatusoutput(rm_cmd)
 		sys.stderr.write("[INFO] Running Done!\n")
 		return 0
 	else:
