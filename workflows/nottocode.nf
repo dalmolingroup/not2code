@@ -4,6 +4,9 @@ nextflow.enable.dsl = 2
 //include { FASTQC                 } from '../modules/nf-core/fastqc/main'
 include { SAMPLESHEET_CHECK      } from '../modules/local/samplesheet_check/main'
 include { GTF_FILTER_TPM         } from '../modules/local/gtf_filter_tpm/main'
+include { STRINGTIE_MERGE        } from '../modules/nf-core/stringtie/merge/main'
+include { GFFCOMPARE             } from '../modules/nf-core/gffcompare/main'
+include { COMPARE_TRANSCRIPTOMES } from '../modules/local/compare_transcriptomes/main'
 include { MULTIQC                } from '../modules/nf-core/multiqc/main'
 include { paramsSummaryMap       } from 'plugin/nf-validation'
 include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
@@ -89,6 +92,81 @@ workflow NOTTOCODE {
         def status = params.filter_by_tpm ? "TPM-filtered" : "original"
         log.info "Using ${status} GTF file: ${gtf_file} for sample: ${meta.id}"
     }
+
+    //
+    // Preparar GTFs para StringTie Merge
+    //
+    ch_gtf_files = ch_filtered_gtf
+        .map { meta, gtf -> gtf }  // Extrair apenas os arquivos GTF
+        .collect()                 // Coletar todos em uma lista
+
+    // Debug opcional
+    ch_gtf_files.view { gtf_list ->
+        log.info "StringTie Merge will process ${gtf_list.size()} GTF files: ${gtf_list}"
+    }
+
+    //
+    // StringTie Merge all GTFs
+    //
+    
+    STRINGTIE_MERGE (
+        ch_gtf_files,    
+        reference_gtf    
+    )
+    ch_versions = ch_versions.mix(STRINGTIE_MERGE.out.versions)
+
+
+    //
+    // Preapare gffcompare entry
+    //
+
+    ch_merged_gtf = STRINGTIE_MERGE.out.gtf.map { gtf ->
+        def meta = [id: 'merged_all_samples']
+        [meta, gtf]
+    }
+
+    //
+    // Compare, merge, annotate and estimate accuracy of generated gtf files0
+    //
+
+    GFFCOMPARE (
+        ch_merged_gtf,
+        reference_gtf
+    )
+    ch_versions = ch_versions.mix(GFFCOMPARE.out.versions)
+
+    //
+    // Debug: Ver saídas do GFFCOMPARE
+    //
+    GFFCOMPARE.out.tmap.view { "TMAP: ${it}" }
+    GFFCOMPARE.out.refmap.view { "REFMAP: ${it}" }
+    GFFCOMPARE.out.annotated_gtf.view { "ANNOTATED_GTF: ${it}" }
+
+    //
+    // Combinar saídas do GFFCOMPARE
+    //
+    ch_gffcompare_combined = GFFCOMPARE.out.tmap
+        .join(GFFCOMPARE.out.refmap, by: 0)      // Join por meta (índice 0)
+        .join(GFFCOMPARE.out.annotated_gtf, by: 0)
+        .map { meta, tmap, refmap, annotated_gtf ->
+            // Verificar se todos os arquivos existem
+            log.info "Combining for ${meta.id}: tmap=${tmap}, refmap=${refmap}, annotated=${annotated_gtf}"
+            return [meta, tmap, refmap, annotated_gtf]
+        }
+
+    //
+    // Debug: Ver canal combinado
+    //
+    ch_gffcompare_combined.view { "Combined channel: ${it}" }
+
+
+    //
+    // Transcipts compare and coding proteins remove
+    //
+    COMPARE_TRANSCRIPTOMES (
+        ch_gffcompare_combined
+    )
+
 
     //
     // Collate and save software versions

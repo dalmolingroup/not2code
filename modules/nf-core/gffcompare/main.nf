@@ -9,8 +9,9 @@ process GFFCOMPARE {
 
     input:
     tuple val(meta), path(gtfs)
-    tuple val(meta2), path(fasta), path(fai)
-    tuple val(meta3), path(reference_gtf)
+    path(reference_gtf)
+    //tuple val(meta2), path(fasta), path(fai)
+    //tuple val(meta3), path(reference_gtf)
 
     output:
     tuple val(meta), path("*.annotated.gtf"), optional: true, emit: annotated_gtf
@@ -28,12 +29,11 @@ process GFFCOMPARE {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def ref_fasta = fasta ? "-s ${fasta}" : ''
+    //def ref_fasta = fasta ? "-s ${fasta}" : ''
     def ref_gtf = reference_gtf ? "-r ${reference_gtf}" : ''
     """
     gffcompare \\
         $args \\
-        $ref_fasta \\
         $ref_gtf \\
         -o $prefix \\
         $gtfs

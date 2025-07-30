@@ -6,13 +6,13 @@ process COMPARE_TRANSCRIPTOMES {
     tag "$meta.id"
     label 'process_medium'
     
-    container 'docker://rocker/tidyverse:4.3.0'
+    conda "${moduleDir}/environment.yml"
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'community.wave.seqera.io/library/bioconductor-rtracklayer_r-tidyverse:4e377b50350447f9' :
+        'community.wave.seqera.io/library/bioconductor-rtracklayer_r-tidyverse:4e377b50350447f9' }"
     
     input:
-    tuple val(meta), 
-    path(tmap_file), 
-    path(refmap_file), 
-    path(annotated_gtf)
+    tuple val(meta), path(tmap_file), path(refmap_file), path(annotated_gtf)
     
     output:
     tuple val(meta), path("*.remove_prot.gtf"), emit: filtered_gtf
@@ -106,8 +106,15 @@ process COMPARE_TRANSCRIPTOMES {
     # Criar arquivo de versões
     cat('"${task.process}":\\n', file="versions.yml")
     cat('    r-base: "', R.version.string, '"\\n', file="versions.yml", append=TRUE)
-    cat('    tidyverse: "', packageVersion("tidyverse"), '"\\n', file="versions.yml", append=TRUE)
-    cat('    rtracklayer: "', packageVersion("rtracklayer"), '"\\n', file="versions.yml", append=TRUE)
+
+    # Verificar se os pacotes estão instalados antes de obter versões
+    if (requireNamespace("tidyverse", quietly = TRUE)) {
+        cat('    tidyverse: "', as.character(packageVersion("tidyverse")), '"\\n', file="versions.yml", append=TRUE)
+    }
+
+    if (requireNamespace("rtracklayer", quietly = TRUE)) {
+        cat('    rtracklayer: "', as.character(packageVersion("rtracklayer")), '"\\n', file="versions.yml", append=TRUE)
+    }
     """
     
     stub:
