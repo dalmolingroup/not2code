@@ -45,7 +45,7 @@ process CPC2 {
 
     # Executar CPC2
     echo "Executando CPC2..." >> ${prefix}.log
-    /usr/local/bin/CPC2.py \\
+    /opt/conda/bin/CPC2.py \\
         -i ${fasta_file} \\
         -o ${output_file} \\
         ${args} \\
