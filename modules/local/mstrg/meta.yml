@@ -1,0 +1,51 @@
+name: "mstrg_prep"
+description: "Processa nomes de transcritos usando script Perl para facilitar identificação"
+keywords:
+  - gtf
+  - transcript
+  - preprocessing
+  - perl
+  - mstrg
+tools:
+  - "perl":
+      description: "Perl programming language"
+      homepage: "https://www.perl.org/"
+      documentation: "https://perldoc.perl.org/"
+      licence: "Artistic-1.0-Perl OR GPL-1.0-or-later"
+
+input:
+  - meta:
+      type: map
+      description: |
+        Groovy Map containing sample information
+        e.g. [ id:'test' ]
+  - gtf_file:
+      type: file
+      description: "Arquivo GTF de entrada"
+      pattern: "*.gtf"
+  - perl_script:
+      type: file
+      description: "Script Perl para processamento dos nomes de transcritos"
+      pattern: "*.pl"
+
+output:
+  - meta:
+      type: map
+      description: |
+        Groovy Map containing sample information
+        e.g. [ id:'test' ]
+  - gtf_prep:
+      type: file
+      description: "Arquivo GTF processado com nomes de transcritos preparados"
+      pattern: "*_prep.gtf"
+  - log:
+      type: file
+      description: "Arquivo de log do processo"
+      pattern: "*.log"
+  - versions:
+      type: file
+      description: "File containing software versions"
+      pattern: "versions.yml"
+
+authors:
+  - "@gleisonm"

@@ -1,10 +1,9 @@
-/*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    IMPORT MODULES / SUBWORKFLOWS / FUNCTIONS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*/
+#!/usr/bin/env nextflow
+nextflow.enable.dsl = 2
 
-include { FASTQC                 } from '../modules/nf-core/fastqc/main'
+//include { FASTQC                 } from '../modules/nf-core/fastqc/main'
+include { SAMPLESHEET_CHECK      } from '../modules/local/samplesheet_check/main'
+include { GTF_FILTER_TPM         } from '../modules/local/gtf_filter_tpm/main'
 include { MULTIQC                } from '../modules/nf-core/multiqc/main'
 include { paramsSummaryMap       } from 'plugin/nf-validation'
 include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
@@ -28,13 +27,64 @@ workflow NOTTOCODE {
     ch_multiqc_files = Channel.empty()
 
     //
-    // MODULE: Run FastQC
+    // Verificar parâmetros obrigatórios
     //
-    FASTQC (
-        ch_samplesheet
-    )
-    ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]})
-    ch_versions = ch_versions.mix(FASTQC.out.versions.first())
+    if (!params.input) {
+        error "ERROR: missing --input samplesheet.csv"
+    }
+
+    if (!params.reference_genome) {
+        error "ERROR: missing --reference_genome fasta"
+    }
+
+    if (!params.reference_gtf) {
+        error "ERROR: missing --reference_gtf annotation file"
+    }
+
+    //
+    // Validate samplesheet
+    //
+    SAMPLESHEET_CHECK(ch_samplesheet)
+    ch_versions = ch_versions.mix(SAMPLESHEET_CHECK.out.versions)
+
+    //
+    // Criar canal de entrada a partir da samplesheet
+    //
+    ch_input = SAMPLESHEET_CHECK.out.csv
+        .splitCsv(header:true, sep:',')
+        .map { row ->
+            def meta = [:]
+            meta.id = row.sample
+            meta.single_end = true
+            
+            def gtf_file = file(row.gtf)
+            if (!gtf_file.exists()) {
+                error("ERROR: Arquivo GTF não encontrado: ${row.gtf}")
+            }
+            
+            return [meta, gtf_file]
+        }
+
+    //
+    // Refence files
+    //
+    genome_fasta = file(params.reference_genome)
+    reference_gtf = file(params.reference_gtf)
+
+    //
+    // Filter GTF by TPM
+    //
+    if (params.filter_by_tpm) {
+        ch_filtered_gtf = GTF_FILTER_TPM(ch_input)
+        ch_versions = ch_versions.mix(GTF_FILTER_TPM.out.versions)
+    } else {
+        ch_filtered_gtf = ch_input
+    }
+
+    ch_filtered_gtf.view { meta, gtf_file ->
+        log.info "Using GTF file: ${gtf_file} for sample: ${meta.id}"
+    }
+
 
     //
     // Collate and save software versions

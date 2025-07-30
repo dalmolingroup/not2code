@@ -88,7 +88,7 @@ workflow {
     // WORKFLOW: Run main workflow
     //
     NFCORE_NOTTOCODE (
-        PIPELINE_INITIALISATION.out.samplesheet
+        params.input
     )
 
     //
