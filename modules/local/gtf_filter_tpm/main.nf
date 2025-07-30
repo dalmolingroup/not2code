@@ -4,8 +4,8 @@ process GTF_FILTER_TPM {
 
     conda "conda-forge::gawk=5.1.0"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-    'https://depot.galaxyproject.org/singularity/gawk:5.1.0--h5b5514e_1' :
-    'quay.io/biocontainers/gawk:5.1.0--h5b5514e_1' }"
+    'https://depot.galaxyproject.org/singularity/gawk:5.1.0-2' :
+    'quay.io/biocontainers/gawk:5.1.0--2' }"
 
     input:
     tuple val(meta), path(gtf)
