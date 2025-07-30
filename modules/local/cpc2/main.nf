@@ -6,9 +6,10 @@ process CPC2 {
     tag "$meta.id"
     label 'process_medium'
     
+    conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-    'https://depot.galaxyproject.org/singularity/cpc2:1.0.1--hdfd78af_0' :
-    'quay.io/biocontainers/cpc2:1.0.1--hdfd78af_0' }"
+        'https://depot.galaxyproject.org/singularity/cpc2:1.0.1--hdfd78af_0' :
+        'quay.io/biocontainers/cpc2:1.0.1--hdfd78af_0' }"
     
     publishDir "${params.outdir}/cpc2", mode: 'copy'
     
@@ -34,11 +35,16 @@ process CPC2 {
     echo "Arquivo FASTA de entrada: ${fasta_file}" >> ${prefix}.log
     echo "Arquivo de saída: ${output_file}" >> ${prefix}.log
     echo "Data/hora de início: \$(date)" >> ${prefix}.log
+    echo "svm models: ${params.cpc2_svm_predict} ${params.cpc2_svm_scale}"
     
     # Contar número de sequências no arquivo FASTA
     seq_count=\$(grep -c "^>" ${fasta_file})
     echo "Número de sequências a serem analisadas: \$seq_count" >> ${prefix}.log
     
+    # Mover modelos para diretório atual
+    ln -s ${params.cpc2_svm_predict} .
+    ln -s ${params.cpc2_svm_scale} .
+
     # Executar CPC2
     echo "Executando CPC2..." >> ${prefix}.log
     CPC2.py \\
