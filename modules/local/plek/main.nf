@@ -8,8 +8,8 @@ process PLEK {
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/plek:1.2--py312h9c9b0c2_9':
-        'biocontainers/plek:1.2--py312h9c9b0c2_9' }"
+    'community.wave.seqera.io/library/plek:1.2--596e6d28764ac174' :
+    'community.wave.seqera.io/library/plek:1.2--596e6d28764ac174' }"
 
     publishDir "${params.outdir}/plek", mode: 'copy'
     
@@ -29,7 +29,7 @@ process PLEK {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def output_file = "${prefix}_PLEK_output.txt"
-    def threads = task.cpus ?: 1
+    def threads = task.cpus ?: 16
     
     """
     # Log início do processo
@@ -52,7 +52,7 @@ process PLEK {
     
     # Executar PLEK
     echo "Executando PLEK..." >> ${prefix}.log
-    python ${plek_script} \\
+    PLEK \\
         -fasta ${fasta_file} \\
         -out ${output_file} \\
         -thread ${threads} \\

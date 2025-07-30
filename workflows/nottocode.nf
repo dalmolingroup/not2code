@@ -10,6 +10,7 @@ include { COMPARE_TRANSCRIPTOMES } from '../modules/local/compare_transcriptomes
 include { GFFREAD                } from '../modules/nf-core/gffread/main'
 include { MSTRG_PREP             } from '../modules/local/mstrg/main'
 include { CPC2                   } from '../modules/local/cpc2/main'
+include { PLEK                   } from '../modules/local/plek/main'
 include { MULTIQC                } from '../modules/nf-core/multiqc/main'
 include { paramsSummaryMap       } from 'plugin/nf-validation'
 include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
@@ -141,6 +142,7 @@ workflow NOTTOCODE {
     //
     // Debug: Ver saídas do GFFCOMPARE
     //
+
     GFFCOMPARE.out.tmap.view { "TMAP: ${it}" }
     GFFCOMPARE.out.refmap.view { "REFMAP: ${it}" }
     GFFCOMPARE.out.annotated_gtf.view { "ANNOTATED_GTF: ${it}" }
@@ -148,6 +150,7 @@ workflow NOTTOCODE {
     //
     // Combinar saídas do GFFCOMPARE
     //
+
     ch_gffcompare_combined = GFFCOMPARE.out.tmap
         .join(GFFCOMPARE.out.refmap, by: 0)      // Join por meta (índice 0)
         .join(GFFCOMPARE.out.annotated_gtf, by: 0)
@@ -166,6 +169,7 @@ workflow NOTTOCODE {
     //
     // Transcipts compare and coding proteins remove
     //
+
     COMPARE_TRANSCRIPTOMES (
         ch_gffcompare_combined
     )
@@ -174,6 +178,7 @@ workflow NOTTOCODE {
     //
     // Validate, filter, convert and perform various other operations on GFF
     //
+
     GFFREAD (
         COMPARE_TRANSCRIPTOMES.out.filtered_gtf,
         genome_fasta
@@ -198,6 +203,18 @@ workflow NOTTOCODE {
         GFFREAD.out.gffread_fasta,
         file(params.cpc2)
     )
+    ch_versions = ch_versions.mix(CPC2.out.versions)
+
+
+    //
+    // PLEK - Coding potential analysis
+    //
+    
+    PLEK (
+        GFFREAD.out.gffread_fasta,
+        file(params.plek_script),
+    )
+
 
     //
     // Collate and save software versions
