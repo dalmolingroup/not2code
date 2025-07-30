@@ -75,16 +75,20 @@ workflow NOTTOCODE {
     // Filter GTF by TPM
     //
     if (params.filter_by_tpm) {
-        ch_filtered_gtf = GTF_FILTER_TPM(ch_input)
+        GTF_FILTER_TPM(
+            ch_input,
+            params.tpm_threshold
+        )
+        ch_filtered_gtf = GTF_FILTER_TPM.out.filtered_gtf
         ch_versions = ch_versions.mix(GTF_FILTER_TPM.out.versions)
     } else {
         ch_filtered_gtf = ch_input
     }
 
     ch_filtered_gtf.view { meta, gtf_file ->
-        log.info "Using GTF file: ${gtf_file} for sample: ${meta.id}"
+        def status = params.filter_by_tpm ? "TPM-filtered" : "original"
+        log.info "Using ${status} GTF file: ${gtf_file} for sample: ${meta.id}"
     }
-
 
     //
     // Collate and save software versions
