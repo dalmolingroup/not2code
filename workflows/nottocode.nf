@@ -7,6 +7,7 @@ include { GTF_FILTER_TPM         } from '../modules/local/gtf_filter_tpm/main'
 include { STRINGTIE_MERGE        } from '../modules/nf-core/stringtie/merge/main'
 include { GFFCOMPARE             } from '../modules/nf-core/gffcompare/main'
 include { COMPARE_TRANSCRIPTOMES } from '../modules/local/compare_transcriptomes/main'
+include { GFFREAD                } from '../modules/nf-core/gffread/main'
 include { MULTIQC                } from '../modules/nf-core/multiqc/main'
 include { paramsSummaryMap       } from 'plugin/nf-validation'
 include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
@@ -166,7 +167,14 @@ workflow NOTTOCODE {
     COMPARE_TRANSCRIPTOMES (
         ch_gffcompare_combined
     )
+    ch_versions = ch_versions.mix(COMPARE_TRANSCRIPTOMES.out.versions)
 
+
+    GFFREAD (
+        COMPARE_TRANSCRIPTOMES.out.filtered_gtf,
+        genome_fasta
+    )
+    ch_versions = ch_versions.mix(GFFREAD.out.versions)
 
     //
     // Collate and save software versions
