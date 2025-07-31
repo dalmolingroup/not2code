@@ -51,6 +51,13 @@ workflow NOTTOCODE {
         error "ERROR: missing --reference_gtf annotation file"
     }
 
+    if (!params.pfam_db) {
+        error "ERROR: missing --pfam_db pfam file. \n
+        you can download it with: wget https://ftp.ebi.ac.uk/pub/databases/Pfam/current_release/Pfam-A.hmm.gz then
+gunzip Pfam-A.hmm.gz"
+    }
+
+
     //
     // Validate samplesheet
     //
@@ -232,8 +239,10 @@ workflow NOTTOCODE {
     // HMMER HMMSEARCH
     //
 
+    ch_pfam_db = Channel.fromPath(params.pfam_db)
+
     HMMER_HMMPRESS (
-        params.pfam_db
+        ch_pfam_db
     )
     ch_versions = ch_versions.mix(HMMER_HMMPRESS.out.versions)
 
@@ -242,13 +251,19 @@ workflow NOTTOCODE {
     def write_target = false  
     def write_domain = true
 
-    // Combinar os canais
-    ch_hmmsearch_input = HMMER_HMMPRESS.out.compressed_db
-        .join(TRANSDECODER_LONGORFS.out.longest_orfs_pep)
-        .map { meta, hmmfile, meta2, seqdb ->
+    // Combinar os canais corretamente
+    // HMMER_HMMPRESS não retorna meta, então precisamos criar o canal corretamente
+    // Precisamos do arquivo HMM original, não apenas dos índices
+    
+    ch_hmmsearch_input = TRANSDECODER_LONGORFS.out.longest_orfs_pep
+        .combine(ch_pfam_db)
+        .combine(HMMER_HMMPRESS.out.compressed_db.collect())
+        .map { meta, seqdb, hmmfile, indices ->
             [meta, hmmfile, seqdb, write_align, write_target, write_domain]
         }
-        .view{it}
+        .view { meta, hmmfile, seqdb, align, target, domain ->
+            "HMMSEARCH input: meta=${meta.id}, hmmfile=${hmmfile}, seqdb=${seqdb}, domain=${domain}"
+        }
 
     HMMER_HMMSEARCH (
         ch_hmmsearch_input
