@@ -12,7 +12,8 @@ include { MSTRG_PREP             } from '../modules/local/mstrg/main'
 include { CPC2                   } from '../modules/local/cpc2/main'
 include { PLEK                   } from '../modules/local/plek/main'
 include { TRANSDECODER_LONGORFS  } from '../modules/local/transdecoder/main'
-include { HMMER_HMMSEARCH        } from '../modules/local/hmmr/main'
+include { HMMER_HMMPRESS         } from '../modules/nf-core/hmmer/hmmpress/main'
+include { HMMER_HMMSEARCH        } from '../modules/nf-core/hmmer/hmmsearch/main'
 include { MULTIQC                } from '../modules/nf-core/multiqc/main'
 include { paramsSummaryMap       } from 'plugin/nf-validation'
 include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
@@ -231,10 +232,16 @@ workflow NOTTOCODE {
     // HMMER HMMSEARCH
     //
 
-    HMMER_HMMSEARCH (
-        TRANSDECODER_LONGORFS.out.longest_orfs_pep,
+    HMMER_HMMPRESS (
         params.pfam_db
     )
+    ch_versions = ch_versions.mix(HMMER_HMMPRESS.out.versions)
+
+    HMMER_HMMSEARCH (
+        GFFREAD.out.gffread_fasta,
+        HMMER_HMMPRESS.out.compressed_db
+    )
+    ch_versions = ch_versions.mix(HMMER_HMMSEARCH.out.versions)
 
     //
     // Collate and save software versions

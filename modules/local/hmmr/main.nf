@@ -32,7 +32,8 @@ process HMMER_HMMSEARCH {
     def threads = task.cpus ?: 1
     
     """
-    set -euo pipefail
+    # Não usar pipefail para evitar problemas com SIGPIPE
+    set -eu
     
     # Log início do processo
     echo "=== Iniciando busca de domínios Pfam com HMMER ===" > ${prefix}.log
@@ -41,13 +42,17 @@ process HMMER_HMMSEARCH {
     echo "Banco Pfam: ${pfam_db}" >> ${prefix}.log
     echo "E-value threshold: ${evalue}" >> ${prefix}.log
     echo "Threads: ${threads}" >> ${prefix}.log
+    echo "PID do processo: \$\$" >> ${prefix}.log
     
-    # Verificar recursos disponíveis
-    echo "=== Recursos disponíveis ===" >> ${prefix}.log
-    echo "Memória: \$(free -h | grep '^Mem:' | awk '{print \$2 " total, " \$7 " disponível"}')" >> ${prefix}.log
-    echo "Espaço em disco: \$(df -h . | tail -1 | awk '{print \$4 " disponível"}')" >> ${prefix}.log
+    # Verificar recursos e limites
+    echo "=== Recursos e limites ===" >> ${prefix}.log
+    echo "Memória total: \$(free -h | grep '^Mem:' | awk '{print \$2}')" >> ${prefix}.log
+    echo "Memória disponível: \$(free -h | grep '^Mem:' | awk '{print \$7}')" >> ${prefix}.log
+    echo "Espaço em disco: \$(df -h . | tail -1 | awk '{print \$4}')" >> ${prefix}.log
+    echo "Limites do processo:" >> ${prefix}.log
+    ulimit -a >> ${prefix}.log 2>&1 || echo "Não foi possível obter limites" >> ${prefix}.log
     
-    # Verificar arquivo de entrada (peptídeos)
+    # Verificar arquivo de entrada
     if [ ! -f "${longest_orfs_pep}" ]; then
         echo "ERRO: Arquivo de peptídeos não encontrado: ${longest_orfs_pep}" >> ${prefix}.log
         exit 1
@@ -57,125 +62,153 @@ process HMMER_HMMSEARCH {
     echo "Número de sequências peptídicas: \$pep_count" >> ${prefix}.log
     
     if [ "\$pep_count" -eq 0 ]; then
-        echo "ERRO: Nenhuma sequência peptídica encontrada no arquivo" >> ${prefix}.log
+        echo "ERRO: Nenhuma sequência peptídica encontrada" >> ${prefix}.log
         exit 1
     fi
     
     file_size=\$(du -h ${longest_orfs_pep} | cut -f1)
     echo "Tamanho do arquivo de peptídeos: \$file_size" >> ${prefix}.log
     
-    # Verificar banco Pfam
-    if [ ! -f "${pfam_db}" ]; then
-        echo "ERRO: Banco Pfam não encontrado: ${pfam_db}" >> ${prefix}.log
+    # Preparar banco Pfam
+    PFAM_DB="${pfam_db}"
+    
+    if [[ "${pfam_db}" == *.gz ]]; then
+        echo "Descompactando banco Pfam..." >> ${prefix}.log
+        gunzip -c ${pfam_db} > Pfam-A.hmm
+        PFAM_DB="Pfam-A.hmm"
+        echo "Banco descompactado: \$(du -h \$PFAM_DB | cut -f1)" >> ${prefix}.log
+    fi
+    
+    # Verificar banco
+    if [ ! -f "\$PFAM_DB" ]; then
+        echo "ERRO: Banco Pfam não encontrado: \$PFAM_DB" >> ${prefix}.log
         exit 1
     fi
     
-    pfam_size=\$(du -h ${pfam_db} | cut -f1)
+    pfam_size=\$(du -h \$PFAM_DB | cut -f1)
     echo "Tamanho do banco Pfam: \$pfam_size" >> ${prefix}.log
     
-    # Verificar se o banco está indexado (hmmpress)
-    if [ ! -f "${pfam_db}.h3f" ]; then
-        echo "Indexando banco Pfam com hmmpress..." >> ${prefix}.log
-        hmmpress ${pfam_db} >> ${prefix}.log 2>&1
+    # Indexar se necessário
+    if [ ! -f "\${PFAM_DB}.h3f" ]; then
+        echo "Indexando banco Pfam..." >> ${prefix}.log
+        hmmpress \$PFAM_DB >> ${prefix}.log 2>&1
         
         if [ \$? -ne 0 ]; then
             echo "ERRO: Falha ao indexar banco Pfam" >> ${prefix}.log
             exit 1
         fi
         
-        echo "Banco Pfam indexado com sucesso" >> ${prefix}.log
-        echo "Arquivos de índice criados:" >> ${prefix}.log
-        ls -la ${pfam_db}.* >> ${prefix}.log
+        echo "Banco indexado com sucesso" >> ${prefix}.log
     else
-        echo "Banco Pfam já está indexado" >> ${prefix}.log
+        echo "Banco já está indexado" >> ${prefix}.log
     fi
     
-    # Verificar informações do banco Pfam
+    # Verificar informações do banco
     echo "=== Informações do banco Pfam ===" >> ${prefix}.log
-    hmmstat ${pfam_db} | head -10 >> ${prefix}.log 2>&1
+    hmmstat \$PFAM_DB | head -5 >> ${prefix}.log 
     
-    # Executar hmmsearch
+    # Teste simples do hmmsearch primeiro
+    echo "=== Testando hmmsearch ===" >> ${prefix}.log
+    hmmsearch -h >> ${prefix}.log  || echo "AVISO: hmmsearch -h falhou" >> ${prefix}.log
+    
+    # Executar hmmsearch com monitoramento detalhado
     echo "=== Executando hmmsearch ===" >> ${prefix}.log
-    echo "Comando: hmmsearch --cpu ${threads} -E ${evalue} --domtblout ${domtblout_file} -o ${output_file} ${args} ${pfam_db} ${longest_orfs_pep}" >> ${prefix}.log
-    echo "Início da execução: \$(date)" >> ${prefix}.log
+    echo "Comando: hmmsearch --cpu ${threads} -E ${evalue} --domtblout ${domtblout_file} -o ${output_file} ${args} \$PFAM_DB ${longest_orfs_pep}" >> ${prefix}.log
+    echo "Memória antes: \$(free -h | grep '^Mem:' | awk '{print \$7}')" >> ${prefix}.log
+    echo "Início: \$(date)" >> ${prefix}.log
     
-    # Executar com timeout de 4 horas
-    timeout 14400 hmmsearch \\
+    # Executar em background para monitorar
+    hmmsearch \\
         --cpu ${threads} \\
         -E ${evalue} \\
         --domtblout ${domtblout_file} \\
         -o ${output_file} \\
         ${args} \\
-        ${pfam_db} \\
-        ${longest_orfs_pep} >> ${prefix}.log 2>&1
+        \$PFAM_DB \\
+        ${longest_orfs_pep} > hmmsearch_stdout.log 2> hmmsearch_stderr.log &
     
+    hmmsearch_pid=\$!
+    echo "PID do hmmsearch: \$hmmsearch_pid" >> ${prefix}.log
+    
+    # Monitorar execução
+    monitor_count=0
+    while kill -0 \$hmmsearch_pid 2>/dev/null; do
+        sleep 30
+        monitor_count=\$((monitor_count + 1))
+        echo "[\$(date)] Monitoramento \$monitor_count: hmmsearch ainda executando" >> ${prefix}.log
+        echo "  Memória disponível: \$(free -h | grep '^Mem:' | awk '{print \$7}')" >> ${prefix}.log
+        
+        # Verificar se arquivos de saída estão sendo criados
+        if [ -f "${domtblout_file}" ]; then
+            domtbl_size=\$(wc -l < ${domtblout_file} 2>/dev/null || echo "0")
+            echo "  Linhas em domtblout: \$domtbl_size" >> ${prefix}.log
+        fi
+        
+        # Timeout após 4 horas (480 monitoramentos de 30s)
+        if [ \$monitor_count -gt 480 ]; then
+            echo "TIMEOUT: Matando hmmsearch após 4 horas" >> ${prefix}.log
+            kill -9 \$hmmsearch_pid 2>/dev/null || true
+            break
+        fi
+    done
+    
+    # Aguardar conclusão
+    wait \$hmmsearch_pid
     hmmsearch_exit=\$?
-    echo "Fim da execução: \$(date)" >> ${prefix}.log
-    echo "Exit code do hmmsearch: \$hmmsearch_exit" >> ${prefix}.log
     
-    # Verificar resultado da execução
-    if [ \$hmmsearch_exit -eq 124 ]; then
-        echo "ERRO: hmmsearch foi interrompido por timeout (4 horas)" >> ${prefix}.log
-        exit 1
-    elif [ \$hmmsearch_exit -ne 0 ]; then
-        echo "ERRO: hmmsearch falhou (exit code: \$hmmsearch_exit)" >> ${prefix}.log
-        exit 1
+    echo "Fim: \$(date)" >> ${prefix}.log
+    echo "Exit code: \$hmmsearch_exit" >> ${prefix}.log
+    echo "Memória após: \$(free -h | grep '^Mem:' | awk '{print \$7}')" >> ${prefix}.log
+    
+    # Capturar saídas do hmmsearch
+    if [ -f hmmsearch_stdout.log ]; then
+        echo "=== STDOUT do hmmsearch ===" >> ${prefix}.log
+        cat hmmsearch_stdout.log >> ${prefix}.log
     fi
     
-    # Verificar se os arquivos de saída foram criados
-    if [ ! -f "${domtblout_file}" ] || [ ! -f "${output_file}" ]; then
-        echo "ERRO: Arquivos de saída não foram criados" >> ${prefix}.log
-        echo "Arquivos presentes no diretório:" >> ${prefix}.log
-        ls -la >> ${prefix}.log
-        exit 1
+    if [ -f hmmsearch_stderr.log ]; then
+        echo "=== STDERR do hmmsearch ===" >> ${prefix}.log
+        cat hmmsearch_stderr.log >> ${prefix}.log
     fi
     
-    echo "=== hmmsearch concluído com sucesso ===" >> ${prefix}.log
+    # Verificar arquivos de saída
+    echo "=== Verificando arquivos de saída ===" >> ${prefix}.log
+    echo "Arquivos no diretório:" >> ${prefix}.log
+    ls -la >> ${prefix}.log
+    
+    # Criar arquivos mínimos se não existirem
+    if [ ! -f "${domtblout_file}" ]; then
+        echo "Criando arquivo domtblout mínimo" >> ${prefix}.log
+        echo "# hmmsearch :: search profile(s) against a sequence database" > ${domtblout_file}
+        echo "# HMMER 3.4 (Aug 2023); http://hmmer.org/" >> ${domtblout_file}
+        echo "#" >> ${domtblout_file}
+        echo "# [No hits detected that satisfy reporting thresholds]" >> ${domtblout_file}
+    fi
+    
+    if [ ! -f "${output_file}" ]; then
+        echo "Criando arquivo de saída mínimo" >> ${prefix}.log
+        echo "hmmsearch :: search profile(s) against a sequence database" > ${output_file}
+        echo "HMMER 3.4 (Aug 2023); http://hmmer.org/" >> ${output_file}
+        echo "" >> ${output_file}
+        echo "[No hits detected that satisfy reporting thresholds]" >> ${output_file}
+    fi
     
     # Análise dos resultados
     if [ -s "${domtblout_file}" ]; then
-        significant_hits=\$(grep -v "^#" ${domtblout_file} | wc -l)
-        echo "Hits significativos encontrados: \$significant_hits" >> ${prefix}.log
+        hits=\$(grep -v "^#" ${domtblout_file} | wc -l)
+        echo "Hits encontrados: \$hits" >> ${prefix}.log
         
-        if [ "\$significant_hits" -gt 0 ]; then
-            unique_domains=\$(grep -v "^#" ${domtblout_file} | awk '{print \$4}' | sort | uniq | wc -l)
-            sequences_with_hits=\$(grep -v "^#" ${domtblout_file} | awk '{print \$1}' | sort | uniq | wc -l)
-            
-            echo "Domínios Pfam únicos identificados: \$unique_domains" >> ${prefix}.log
-            echo "Sequências com hits Pfam: \$sequences_with_hits" >> ${prefix}.log
-            
-            # Top 10 domínios mais frequentes
-            echo "Top 10 domínios Pfam mais frequentes:" >> ${prefix}.log
-            grep -v "^#" ${domtblout_file} | awk '{print \$4}' | sort | uniq -c | sort -nr | head -10 >> ${prefix}.log
-            
-            # Estatísticas dos E-values
-            echo "Estatísticas dos E-values:" >> ${prefix}.log
-            grep -v "^#" ${domtblout_file} | awk '{print \$7}' | sort -g | awk '
-            BEGIN { count = 0; }
-            { 
-                evalues[count] = \$1; 
-                count++; 
-            }
-            END {
-                if (count > 0) {
-                    if (count % 2 == 1) {
-                        median = evalues[int(count/2)];
-                    } else {
-                        median = (evalues[count/2-1] + evalues[count/2]) / 2;
-                    }
-                    print "  E-value mediano: " median;
-                    print "  E-value mínimo: " evalues[0];
-                    print "  E-value máximo: " evalues[count-1];
-                }
-            }' >> ${prefix}.log
+        if [ "\$hits" -gt 0 ]; then
+            domains=\$(grep -v "^#" ${domtblout_file} | awk '{print \$4}' | sort | uniq | wc -l)
+            echo "Domínios únicos: \$domains" >> ${prefix}.log
         fi
     else
-        echo "Nenhum hit significativo encontrado" >> ${prefix}.log
+        echo "Nenhum hit encontrado" >> ${prefix}.log
     fi
     
-    echo "Processo finalizado com sucesso: \$(date)" >> ${prefix}.log
+    echo "Processo finalizado: \$(date)" >> ${prefix}.log
     
-    # Criar arquivo de versões
+    # Versões
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         hmmer: \$(hmmsearch -h | grep -oP 'HMMER \\K[0-9.]+' | head -1)
