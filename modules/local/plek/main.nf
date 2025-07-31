@@ -29,93 +29,88 @@ process PLEK {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def output_file = "${prefix}_PLEK_output.txt"
-    def threads = task.cpus ?: 16
+    def threads = task.cpus ?: 6
     
     """
-    # Log início do processo
-    echo "Iniciando análise de potencial codificante com PLEK" > ${prefix}.log
-    echo "Arquivo FASTA de entrada: ${fasta_file}" >> ${prefix}.log
-    echo "Script PLEK: ${plek_script}/PLEK.py" >> ${prefix}.log
+    # Inicializar log
+    echo "=== Análise PLEK ===" > ${prefix}.log
+    echo "Data/hora: \$(date)" >> ${prefix}.log
+    echo "Arquivo FASTA: ${fasta_file}" >> ${prefix}.log
     echo "Arquivo de saída: ${output_file}" >> ${prefix}.log
-    echo "Número de threads: ${threads}" >> ${prefix}.log
-    echo "Data/hora de início: \$(date)" >> ${prefix}.log
+    echo "Threads: ${threads}" >> ${prefix}.log
     
-    # Contar número de sequências no arquivo FASTA
-    seq_count=\$(grep -c "^>" ${fasta_file})
-    echo "Número de sequências a serem analisadas: \$seq_count" >> ${prefix}.log
+    # Verificar arquivo FASTA
+    seq_count=\$(grep -c "^>" ${fasta_file} 2>/dev/null || echo "0")
+    echo "Número de sequências: \$seq_count" >> ${prefix}.log
     
-    # Verificar se o script PLEK existe
-    if [ ! -f "${plek_script}/PLEK.py" ]; then
-        echo "ERRO: Script PLEK não encontrado: ${plek_script}" >> ${prefix}.log
+    if [ "\$seq_count" -eq 0 ]; then
+        echo "ERRO: Nenhuma sequência no FASTA" >> ${prefix}.log
         exit 1
     fi
     
-    # Executar PLEK
+    # Executar PLEK - ignorar exit code e verificar sucesso pelo arquivo de saída
     echo "Executando PLEK..." >> ${prefix}.log
-    python ${plek_script}/PLEK.py \
-        -fasta ${fasta_file} \
-        -out ${output_file} \
-        -thread ${threads} \
-        ${args} \
-        2>&1 | tee -a ${prefix}.log
     
-    # Verificar se o arquivo de saída foi criado
-    if [ -f "${output_file}" ]; then
-        echo "Análise PLEK concluída com sucesso" >> ${prefix}.log
-        
-        # Contar resultados
-        total_results=\$(tail -n +2 ${output_file} | wc -l)
-        coding_count=\$(tail -n +2 ${output_file} | awk '\$2=="Coding"' | wc -l)
-        noncoding_count=\$(tail -n +2 ${output_file} | awk '\$2=="Non-coding"' | wc -l)
-        
-        echo "Total de transcritos analisados: \$total_results" >> ${prefix}.log
-        echo "Transcritos codificantes: \$coding_count" >> ${prefix}.log
-        echo "Transcritos não-codificantes: \$noncoding_count" >> ${prefix}.log
-        
-        # Mostrar estatísticas dos scores
-        echo "Estatísticas dos scores PLEK:" >> ${prefix}.log
-        tail -n +2 ${output_file} | awk '{print \$3}' | sort -n | awk '
-        BEGIN { sum = 0; count = 0; }
-        { 
-            values[count] = \$1; 
-            sum += \$1; 
-            count++; 
-        }
-        END {
-            if (count > 0) {
-                mean = sum / count;
-                if (count % 2 == 1) {
-                    median = values[int(count/2)];
-                } else {
-                    median = (values[count/2-1] + values[count/2]) / 2;
-                }
-                print "  Score médio: " mean;
-                print "  Score mediano: " median;
-                print "  Score mínimo: " values[0];
-                print "  Score máximo: " values[count-1];
-            }
-        }' >> ${prefix}.log
-        
-    else
-        echo "ERRO: Arquivo de saída não foi criado" >> ${prefix}.log
+    python ${plek_script}/PLEK.py \\
+        -fasta ${fasta_file} \\
+        -out ${output_file} \\
+        -thread ${threads} \\
+        ${args} >> ${prefix}.log 2>&1 || true
+    
+    # Verificar se o PLEK executou com sucesso baseado no arquivo de saída
+    if [ ! -f "${output_file}" ]; then
+        echo "ERRO: PLEK falhou - arquivo de saída não foi criado" >> ${prefix}.log
         exit 1
     fi
     
-    echo "Data/hora de término: \$(date)" >> ${prefix}.log
+    if [ ! -s "${output_file}" ]; then
+        echo "ERRO: PLEK falhou - arquivo de saída está vazio" >> ${prefix}.log
+        exit 1
+    fi
+    
+    # Verificar se o arquivo tem conteúdo válido (pelo menos 2 linhas)
+    line_count=\$(wc -l < ${output_file} 2>/dev/null || echo "0")
+    if [ "\$line_count" -lt 2 ]; then
+        echo "ERRO: PLEK falhou - arquivo de saída inválido (\$line_count linhas)" >> ${prefix}.log
+        exit 1
+    fi
+    
+    echo "PLEK executado com sucesso" >> ${prefix}.log
+    echo "Arquivo de saída: ${output_file} (\$line_count linhas)" >> ${prefix}.log
+    
+    # Análise básica dos resultados
+    total_results=\$(tail -n +2 ${output_file} | wc -l)
+    coding_count=\$(tail -n +2 ${output_file} | grep -c "^Coding" || echo "0")
+    noncoding_count=\$(tail -n +2 ${output_file} | grep -c "^Non-coding" || echo "0")
+    
+    echo "=== Resultados ===" >> ${prefix}.log
+    echo "Total de transcritos analisados: \$total_results" >> ${prefix}.log
+    echo "Transcritos codificantes: \$coding_count" >> ${prefix}.log
+    echo "Transcritos não-codificantes: \$noncoding_count" >> ${prefix}.log
+    
+    # Calcular porcentagem usando uma abordagem mais simples
+    if [ "\$total_results" -gt 0 ]; then
+        # Usar Python para calcular a porcentagem (mais confiável)
+        coding_percent=\$(python3 -c "print(f'{(\$coding_count * 100.0 / \$total_results):.2f}')")
+        echo "Percentual codificante: \$coding_percent%" >> ${prefix}.log
+    fi
+    
+    echo "Análise concluída com sucesso" >> ${prefix}.log
     
     # Criar arquivo de versões
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         plek: "1.2"
-        python: \$(python --version 2>&1 | grep -oP 'Python \\K[0-9.]+')
+        python: \$(python --version 2>&1 | grep -oP 'Python \\K[0-9.]+' || echo "unknown")
     END_VERSIONS
     """
     
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${prefix}_PLEK_output.txt
-    touch ${prefix}.log
+    echo "STUB mode" > ${prefix}.log
+    echo -e "Transcript_ID\\tLabel\\tScore" > ${prefix}_PLEK_output.txt
+    echo -e "test_transcript_1\\tCoding\\t0.8" >> ${prefix}_PLEK_output.txt
     
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
