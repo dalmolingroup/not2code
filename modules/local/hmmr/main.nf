@@ -6,7 +6,7 @@ process HMMER_HMMSEARCH {
     tag "$meta.id"
     label 'process_high'
     
-    container 'quay.io/biocontainers/hmmer:3.3.2--h87f3376_2'
+    container 'quay.io/biocontainers/hmmer:3.4--hb6cb901_4'
     
     publishDir "${params.outdir}/hmmer", mode: 'copy'
     
