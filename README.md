@@ -75,25 +75,12 @@ graph TD
   D --> E[Transcript comparison]
   E --> F[GffRead]
   F --> G[MSTRG formatting]
-  G --> H[CPC2 and PLEK (Coding potential)]
-  H --> I[TransDecoder (long ORFs)]
-  I --> J[HMMER (Pfam scan)]
-  J --> K[MultiQC + Reports]
+  G --> H[CPC2 and PLEK - coding potential]
+  H --> I[TransDecoder - long ORFs]
+  I --> J[HMMER - Pfam scan]
+  J --> K[MultiQC and reports]
 
 ```
-
-<!-- TODO nf-core:
-   Complete this sentence with a 2-3 sentence summary of what types of data the pipeline ingests, a brief overview of the
-   major pipeline sections and the types of output it produces. You're giving an overview to someone new
-   to nf-core here, in 15-20 seconds. For an example, see https://github.com/nf-core/rnaseq/blob/master/README.md#introduction
--->
-
-<!-- TODO nf-core: Include a figure that guides the user through the major workflow steps. Many nf-core
-     workflows use the "tube map" design for that. See https://nf-co.re/docs/contributing/design_guidelines#examples for examples.   -->
-<!-- TODO nf-core: Fill in short bullet-pointed list of the default steps in the pipeline -->
-
-1. Read QC ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
-2. Present QC for raw reads ([`MultiQC`](http://multiqc.info/))
 
 ## Usage
 
@@ -112,8 +99,6 @@ CONTROL_REP1,AEG588A1.gtf
 
 Each row represents a gtf file.
 
--->
-
 Now, you can run the pipeline using:
 
 <!-- TODO nf-core: update the following command to include all required parameters for a minimal example -->
@@ -127,11 +112,6 @@ nextflow run nf-core/nottocode \
   --pfam_db /path/to/Pfam-A.hmm \
 ```
 
-> [!WARNING]
-> Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_;
-> see [docs](https://nf-co.re/usage/configuration#custom-configuration-files).
-
-For more details and further functionality, please refer to the [usage documentation](https://nf-co.re/nottocode/usage) and the [parameter documentation](https://nf-co.re/nottocode/parameters).
 
 ## Pipeline output
 
