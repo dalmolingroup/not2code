@@ -8,12 +8,8 @@ process HMMER_HMMSEARCH {
         'biocontainers/hmmer:3.4--hdbdd923_1' }"
 
     input:
-    tuple val(meta), 
-    path(hmmfile), 
-    path(seqdb), 
-    val(write_align), 
-    val(write_target), 
-    val(write_domain)
+    tuple val(meta), path(hmmfile), path(seqdb), val(write_align), val(write_target), val(write_domain)
+
 
     output:
     tuple val(meta), path('*.txt.gz')   , emit: output

@@ -237,9 +237,21 @@ workflow NOTTOCODE {
     )
     ch_versions = ch_versions.mix(HMMER_HMMPRESS.out.versions)
 
+    // Definir os parâmetros booleanos
+    def write_align = false
+    def write_target = false  
+    def write_domain = true
+
+    // Combinar os canais
+    ch_hmmsearch_input = HMMER_HMMPRESS.out.compressed_db
+        .join(TRANSDECODER_LONGORFS.out.longest_orfs_pep)
+        .map { meta, hmmfile, meta2, seqdb ->
+            [meta, hmmfile, seqdb, write_align, write_target, write_domain]
+        }
+        .view{it}
+
     HMMER_HMMSEARCH (
-        GFFREAD.out.gffread_fasta,
-        HMMER_HMMPRESS.out.compressed_db
+        ch_hmmsearch_input
     )
     ch_versions = ch_versions.mix(HMMER_HMMSEARCH.out.versions)
 
