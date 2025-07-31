@@ -299,7 +299,7 @@ https://sourceforge.net/projects/plek/
 	   
 		#total number of rows 
 		count = -1
-		for count, line in enumerate(open(svm_file, 'rU')):
+		for count, line in enumerate(open(svm_file, 'r')):
 			pass
 			count += 1 
 		#
