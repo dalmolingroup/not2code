@@ -233,7 +233,7 @@ workflow NOTTOCODE {
 
     HMMER_HMMSEARCH (
         TRANSDECODER_LONGORFS.out.longest_orfs_pep,
-        file(params.pfam_db_path ?: 'Pfam-A.hmm')
+        params.pfam_db
     )
 
     //
