@@ -1,0 +1,2 @@
+
+1. PLEKModelling.py can not be run in multi-threading manner on AIX 6.1 + Python 2.6.2.

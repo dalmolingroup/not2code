@@ -1,0 +1,32 @@
+#===========
+# 2013-11-16
+#===========
+PLEK 1.0 released.
+
+
+#===========
+# 2014-03-29
+#===========
+PLEK 1.1 released.
+(1) Friendly prompt messages were added.
+(2) Fixed a few bugs.
+
+
+#===========
+# 2014-06-24
+#===========
+PLEK 1.2 released.
+(1) Users can build a predictor/classifier by using their own 
+   mRNA/lncRNA transcripts with PLEKModelling.py.
+(2) Decision values of each sample/transcript is output to result file 
+   (The first field is 'class label¡¯; the second is 'decision value').
+(3) Output the percentage of transcripts classified as protein-coding
+   or non-coding.
+(4) Fixed a few bugs.
+
+#===========
+# 2014-06-26
+#===========
+svm_grid_modelling_singlet.py was updated. This script is related to
+PLEK_howto_generate_scripts.doc and PLEK_generate_scripts.R, 
+and is called by PLEKModelling.py.

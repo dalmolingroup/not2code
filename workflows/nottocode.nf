@@ -209,10 +209,10 @@ workflow NOTTOCODE {
     //
     // PLEK - Coding potential analysis
     //
-    
+
     PLEK (
         GFFREAD.out.gffread_fasta,
-        file(params.plek_script),
+        file(params.plek),
     )
 
 

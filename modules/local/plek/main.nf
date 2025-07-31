@@ -8,8 +8,8 @@ process PLEK {
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-    'community.wave.seqera.io/library/plek_numpy_scikit-learn_scipy:ebea7cd00ea7ee71' :
-    'community.wave.seqera.io/library/plek_numpy_scikit-learn_scipy:ebea7cd00ea7ee71' }"
+    'community.wave.seqera.io/library/cxx-compiler_python:25b9eddb2d84e6d6' :
+    'community.wave.seqera.io/library/cxx-compiler_python:25b9eddb2d84e6d6' }"
 
     publishDir "${params.outdir}/plek", mode: 'copy'
     
@@ -35,7 +35,7 @@ process PLEK {
     # Log início do processo
     echo "Iniciando análise de potencial codificante com PLEK" > ${prefix}.log
     echo "Arquivo FASTA de entrada: ${fasta_file}" >> ${prefix}.log
-    echo "Script PLEK: ${plek_script}" >> ${prefix}.log
+    echo "Script PLEK: ${plek_script}/PLEK.py" >> ${prefix}.log
     echo "Arquivo de saída: ${output_file}" >> ${prefix}.log
     echo "Número de threads: ${threads}" >> ${prefix}.log
     echo "Data/hora de início: \$(date)" >> ${prefix}.log
@@ -45,14 +45,14 @@ process PLEK {
     echo "Número de sequências a serem analisadas: \$seq_count" >> ${prefix}.log
     
     # Verificar se o script PLEK existe
-    if [ ! -f "${plek_script}" ]; then
+    if [ ! -f "${plek_script}/PLEK.py" ]; then
         echo "ERRO: Script PLEK não encontrado: ${plek_script}" >> ${prefix}.log
         exit 1
     fi
     
     # Executar PLEK
     echo "Executando PLEK..." >> ${prefix}.log
-    python ${plek_script} \
+    python ${plek_script}/PLEK.py \
         -fasta ${fasta_file} \
         -out ${output_file} \
         -thread ${threads} \

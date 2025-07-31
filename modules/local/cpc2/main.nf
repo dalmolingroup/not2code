@@ -12,7 +12,7 @@ process CPC2 {
     path(cpc2)
 
     output:
-    tuple val(meta), path("*.txt"), emit: results
+    tuple val(meta), path("*.txt"), emit: PLEK_results
     tuple val(meta), path("*.log"), emit: log
     path "versions.yml"           , emit: versions
 

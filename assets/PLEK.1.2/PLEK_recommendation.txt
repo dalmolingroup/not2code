@@ -1,0 +1,15 @@
+PLEKModelling.py
+========================
+Number of samples and recommended parameter settings
+#class1   #class2    k      n-fold    thread        run 
+>3000     >3000      4      10        6,12,24,36    PLEKModelling.py in multi-threading manner
+>9000     >9000      4,5    5,10      24,36         run PLEKModelling.py in parellel 
+  
+
+
+Recommended parameter settings:
+-thread:    36, 24, 12(default), 6
+-nfold:     10(default), 5
+-minlength: 200(default), 150
+-k:         5(default), 4, 3
+
