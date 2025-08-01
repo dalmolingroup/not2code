@@ -254,13 +254,8 @@ workflow NOTTOCODE {
     // Precisamos do arquivo HMM original, não apenas dos índices
     
     ch_hmmsearch_input = TRANSDECODER_LONGORFS.out.longest_orfs_pep
-        .combine(ch_pfam_db)
-        .combine(HMMER_HMMPRESS.out.compressed_db.collect())
-        .map { meta, seqdb, hmmfile, indices ->
-            [meta, hmmfile, seqdb, write_align, write_target, write_domain]
-        }
-        .view { meta, hmmfile, seqdb, align, target, domain ->
-            "HMMSEARCH input: meta=${meta.id}, hmmfile=${hmmfile}, seqdb=${seqdb}, domain=${domain}"
+        .map { meta, seqdb ->
+            [meta, params.pfam_db, seqdb, write_align, write_target, write_domain]
         }
 
     HMMER_HMMSEARCH (
