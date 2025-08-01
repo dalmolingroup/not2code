@@ -14,6 +14,7 @@ include { PLEK                   } from '../modules/local/plek/main'
 include { TRANSDECODER_LONGORFS  } from '../modules/local/transdecoder/main'
 include { HMMER_HMMPRESS         } from '../modules/nf-core/hmmer/hmmpress/main'
 include { HMMER_HMMSEARCH        } from '../modules/nf-core/hmmer/hmmsearch/main'
+include { SELECT_LNCRNAS         } from '../modules/local/selectlnc/main'
 include { XZ_DECOMPRESS          } from '../modules/nf-core/xz/decompress/main'  
 include { UNTAR                  } from '../modules/nf-core/untar/main'  
 include { MULTIQC                } from '../modules/nf-core/multiqc/main'
@@ -99,8 +100,8 @@ workflow NOTTOCODE {
     //
     // Refence files
     //
-    genome_fasta = file(params.reference_genome)
-    reference_gtf = file(params.reference_gtf)
+    ch_genome_fasta = file(params.reference_genome)
+    ch_reference_gtf = file(params.reference_gtf)
 
     //
     // Filter GTF by TPM
@@ -141,7 +142,7 @@ workflow NOTTOCODE {
     
     STRINGTIE_MERGE (
         ch_gtf_files,    
-        reference_gtf    
+        ch_reference_gtf    
     )
     ch_versions = ch_versions.mix(STRINGTIE_MERGE.out.versions)
 
@@ -161,7 +162,7 @@ workflow NOTTOCODE {
 
     GFFCOMPARE (
         ch_merged_gtf,
-        reference_gtf
+        ch_reference_gtf
     )
     ch_versions = ch_versions.mix(GFFCOMPARE.out.versions)
 
@@ -207,7 +208,7 @@ workflow NOTTOCODE {
 
     GFFREAD (
         COMPARE_TRANSCRIPTOMES.out.filtered_gtf,
-        genome_fasta
+        ch_genome_fasta
     )
     ch_versions = ch_versions.mix(GFFREAD.out.versions)
 
@@ -280,6 +281,16 @@ workflow NOTTOCODE {
         ch_hmmsearch_input
     )
     ch_versions = ch_versions.mix(HMMER_HMMSEARCH.out.versions)
+
+    SELECT_LNCRNAS (
+        MSTRG_PREP.out.gtf_prep,
+        CPC2.out.cpc2_results,
+        PLEK.out.plek_results,
+        HMMER_HMMSEARCH.out.domain_summary,
+        ch_reference_gtf
+    )
+     ch_versions = ch_versions.mix(SELECT_LNCRNAS.out.versions)
+
 
     //
     // Collate and save software versions

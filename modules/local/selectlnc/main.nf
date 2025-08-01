@@ -6,7 +6,11 @@ process SELECT_LNCRNAS {
     tag "$meta.id"
     label 'process_medium'
     
-    container 'docker://rocker/tidyverse:4.3.0'
+    conda "${moduleDir}/environment.yml"
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'community.wave.seqera.io/library/bioconductor-rtracklayer_r-tidyverse:4e377b50350447f9' :
+        'community.wave.seqera.io/library/bioconductor-rtracklayer_r-tidyverse:4e377b50350447f9' }"
+    
     
     publishDir "${params.outdir}/lncrnas", mode: 'copy'
     
@@ -157,19 +161,92 @@ process SELECT_LNCRNAS {
     cat("Referência carregada:", nrow(reference_filter), "linhas (transcript + exon)\\n")
     
     combined_stringtie_ncbi <- dplyr::bind_rows(reference_filter, gtf_lncRNA)
-    cat("GTF combinado criado:", nrow(combined_stringtie_ncbi), "linhas\\n")
-    
+
+    combined_stringtie_ncbi\$Dbxref <- sapply(combined_stringtie_ncbi\$Dbxref, function(x) {
+      if (is.null(x)) return(NA_character_)
+      paste(x, collapse = ",")
+    })
+
+    combined_stringtie_ncbi\$end_range <- sapply(combined_stringtie_ncbi\$end_range, function(x) {
+      if (is.null(x)) return(NA_character_)
+      paste(x, collapse = ",")
+    })
+
+    combined_stringtie_ncbi\$start_range <- sapply(combined_stringtie_ncbi\$start_range, function(x) {
+      if (is.null(x)) return(NA_character_)
+      paste(x, collapse = ",")
+    })
+
+    combined_stringtie_ncbi\$Parent <- sapply(combined_stringtie_ncbi\$Parent, function(x) {
+      if (is.null(x)) return(NA_character_)
+      paste(x, collapse = ",")
+    })
+
+    combined_stringtie_ncbi\$Note <- sapply(combined_stringtie_ncbi\$Note, function(x) {
+      if (is.null(x)) return(NA_character_)
+      paste(x, collapse = ",")
+    })
+
+    combined_stringtie_ncbi\$gene_id[is.na(combined_stringtie_ncbi\$gene_id)] <- "unknown_gene"
+    combined_stringtie_ncbi\$transcript_id[is.na(combined_stringtie_ncbi\$transcript_id)] <- "unknown_transcript"
+    combined_stringtie_ncbi\$exon_number[is.na(combined_stringtie_ncbi\$exon_number)] <- "0"
+
+    # Criar a coluna `attribute` no formato GTF
+    combined_stringtie_ncbi\$attribute <- paste0(
+      'gene_id "', combined_stringtie_ncbi\$gene_id, '"; ',
+      'transcript_id "', combined_stringtie_ncbi\$transcript_id, '"; ',
+      'exon_number "', combined_stringtie_ncbi\$exon_number, '";'
+    )
+
+    # Criar o GRanges com os campos obrigatórios
+    combined_stringtie_ncbi <- GRanges(
+      seqnames = combined_stringtie_ncbi\$seqnames,
+      ranges = IRanges(start = combined_stringtie_ncbi\$start, end = combined_stringtie_ncbi\$end),
+      strand = combined_stringtie_ncbi\$strand,
+      
+      # metadados (evite nomes reservados)
+      source = combined_stringtie_ncbi\$source,
+      type = combined_stringtie_ncbi\$type,
+      class_code = combined_stringtie_ncbi\$class_code,
+      transcript_id = combined_stringtie_ncbi\$transcript_id,
+      gene_id = combined_stringtie_ncbi\$gene_id,
+      db_xref = sapply(combined_stringtie_ncbi\$Dbxref, paste, collapse = ","),
+      gbkey = combined_stringtie_ncbi\$gbkey,
+      locus_tag = combined_stringtie_ncbi\$locus_tag,
+      partial = combined_stringtie_ncbi\$partial,
+      orig_protein_id = combined_stringtie_ncbi\$orig_protein_id,
+      orig_transcript_id = combined_stringtie_ncbi\$orig_transcript_id,
+      product = combined_stringtie_ncbi\$product,
+      transcript_biotype = combined_stringtie_ncbi\$transcript_biotype,
+      exon_number = combined_stringtie_ncbi\$exon_number,
+      pseudo = combined_stringtie_ncbi\$pseudo,
+      PLEK = combined_stringtie_ncbi\$PLEK,
+      transcript_length = combined_stringtie_ncbi\$transcript_length,
+      peptide_length = combined_stringtie_ncbi\$peptide_length,
+      CPC2 = combined_stringtie_ncbi\$CPC2,
+      xloc = combined_stringtie_ncbi\$xloc,
+      tss_id = combined_stringtie_ncbi\$tss_id,
+      cmp_ref = combined_stringtie_ncbi\$cmp_ref,
+      transcript_id_stringtie = NA_character_,
+      gene_id_stringtie = NA_character_,
+      score = combined_stringtie_ncbi\$score,
+      phase = combined_stringtie_ncbi\$phase,
+      attribute = combined_stringtie_ncbi\$attribute
+    )
+
+    cat("GTF combinado criado:", nrow(combined_stringtie_ncbi), "linhas\n")
+
     # Verificar sobreposição
     overlap_check <- sum(gtf_lncRNA\$transcript_id %in% reference\$transcript_id)
-    cat("Sobreposição transcript_id (esperado 0):", overlap_check, "\\n")
-    
+    cat("Sobreposição transcript_id (esperado 0):", overlap_check, "\n")
+
     rtracklayer::export(combined_stringtie_ncbi, "combined_stringtie_ncbi.gtf")
-    cat("  combined_stringtie_ncbi.gtf exportado\\n")
-    
+    cat("  combined_stringtie_ncbi.gtf exportado\n")
+
     # Renomear IDs
-    cat("\\nRenomeando IDs...\\n")
+    cat("\nRenomeando IDs...\n")
     combined_stringtie_ncbi_new_names <- as.data.frame(rtracklayer::import("combined_stringtie_ncbi.gtf"))
-    
+
     new_names <- combined_stringtie_ncbi_new_names %>%
       dplyr::filter(type == "transcript") %>%
       mutate(transcript_id_new = ifelse(source == "StringTie",
@@ -179,18 +256,18 @@ process SELECT_LNCRNAS {
                                   paste0("Pb18_lncRNA", gsub("MSTRG.", "_", gene_id)),
                                   gene_id)) %>%
       dplyr::select(transcript_id, transcript_id_new, gene_id, gene_id_new) %>% distinct()
-    
-    cat("Novos nomes criados para:", nrow(new_names), "transcritos\\n")
-    
+
+    cat("Novos nomes criados para:", nrow(new_names), "transcritos\n")
+
     # Aplicar novos nomes
     combined_stringtie_ncbi_new_names <- left_join(combined_stringtie_ncbi_new_names,
-                                                   new_names %>% dplyr::select(transcript_id, transcript_id_new) %>% distinct(), 
-                                                   by = "transcript_id")
-    
+                                                  new_names %>% dplyr::select(transcript_id, transcript_id_new) %>% distinct(), 
+                                                  by = "transcript_id")
+
     combined_stringtie_ncbi_new_names <- left_join(combined_stringtie_ncbi_new_names,
-                                                   new_names %>% dplyr::select(gene_id, gene_id_new) %>% distinct(), 
-                                                   by = "gene_id")
-    
+                                                  new_names %>% dplyr::select(gene_id, gene_id_new) %>% distinct(), 
+                                                  by = "gene_id")
+
     # Reorganizar colunas
     combined_stringtie_ncbi_new_names <- combined_stringtie_ncbi_new_names %>%
       dplyr::rename(transcript_id_stringtie = transcript_id) %>%
@@ -204,6 +281,7 @@ process SELECT_LNCRNAS {
                     pseudo, PLEK, transcript_length, peptide_length, CPC2,
                     xloc, class_code, tss_id, cmp_ref,
                     transcript_id_stringtie, gene_id_stringtie)
+
     
     rtracklayer::export(combined_stringtie_ncbi_new_names, "combined_stringtie_ncbi_new_names.gtf")
     cat("  combined_stringtie_ncbi_new_names.gtf exportado\\n")
@@ -244,10 +322,10 @@ process SELECT_LNCRNAS {
     sink()
     
     # Criar arquivo de versões
-    cat('"${task.process}":\\n', file="versions.yml")
-    cat('    r-base: "', R.version.string, '"\\n', file="versions.yml", append=TRUE)
-    cat('    tidyverse: "', packageVersion("tidyverse"), '"\\n', file="versions.yml", append=TRUE)
-    cat('    rtracklayer: "', packageVersion("rtracklayer"), '"\\n', file="versions.yml", append=TRUE)
+    cat('"NFCORE_NOTTOCODE:NOTTOCODE:SELECT_LNCRNAS":\n', file="versions.yml")
+    cat('    r-base: "', R.version.string, '"\n', file="versions.yml", append=TRUE)
+    cat('    tidyverse: "', as.character(packageVersion("tidyverse")), '"\n', file = "versions.yml", append = TRUE)
+    cat('    rtracklayer: "', as.character(packageVersion("rtracklayer")), '"\n', file = "versions.yml", append = TRUE)
     """
     
     stub:
