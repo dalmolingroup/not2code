@@ -14,6 +14,8 @@ include { PLEK                   } from '../modules/local/plek/main'
 include { TRANSDECODER_LONGORFS  } from '../modules/local/transdecoder/main'
 include { HMMER_HMMPRESS         } from '../modules/nf-core/hmmer/hmmpress/main'
 include { HMMER_HMMSEARCH        } from '../modules/nf-core/hmmer/hmmsearch/main'
+include { XZ_DECOMPRESS          } from '../modules/nf-core/xz/decompress/main'  
+include { UNTAR                  } from '../modules/nf-core/untar/main'  
 include { MULTIQC                } from '../modules/nf-core/multiqc/main'
 include { paramsSummaryMap       } from 'plugin/nf-validation'
 include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
@@ -55,6 +57,20 @@ workflow NOTTOCODE {
         error "ERROR: missing --pfam_db pfam file. you can download it with: wget https://ftp.ebi.ac.uk/pub/databases/Pfam/current_release/Pfam-A.hmm.gz then gunzip Pfam-A.hmm.gz"
     }
 
+    ch_plek_archive = Channel.fromPath(params.plek, checkIfExists: true)
+    .map { file -> 
+        def meta = [id: 'plek_db']
+        [meta, file]
+    }
+
+    XZ_DECOMPRESS (
+        ch_plek_archive
+    )
+
+    UNTAR (
+        XZ_DECOMPRESS.out.file
+    )
+    ch_plek_db = UNTAR.out.untar.map { meta, path -> path }
 
     //
     // Validate samplesheet
@@ -116,6 +132,8 @@ workflow NOTTOCODE {
     ch_gtf_files.view { gtf_list ->
         log.info "StringTie Merge will process ${gtf_list.size()} GTF files: ${gtf_list}"
     }
+
+    
 
     //
     // StringTie Merge all GTFs
@@ -220,7 +238,7 @@ workflow NOTTOCODE {
 
     PLEK (
         GFFREAD.out.gffread_fasta,
-        file(params.plek),
+        ch_plek_db,
     )
     ch_versions = ch_versions.mix(PLEK.out.versions)
 
@@ -286,6 +304,14 @@ workflow NOTTOCODE {
         Channel.fromPath(params.multiqc_logo, checkIfExists: true) :
         Channel.empty()
 
+    // Add the missing channels
+    ch_multiqc_replace_names = params.multiqc_replace_names ?
+        Channel.fromPath(params.multiqc_replace_names, checkIfExists: true) :
+        Channel.empty()
+    ch_multiqc_sample_names  = params.multiqc_sample_names ?
+        Channel.fromPath(params.multiqc_sample_names, checkIfExists: true) :
+        Channel.empty()
+
     summary_params      = paramsSummaryMap(
         workflow, parameters_schema: "nextflow_schema.json")
     ch_workflow_summary = Channel.value(paramsSummaryMultiqc(summary_params))
@@ -310,7 +336,9 @@ workflow NOTTOCODE {
         ch_multiqc_files.collect(),
         ch_multiqc_config.toList(),
         ch_multiqc_custom_config.toList(),
-        ch_multiqc_logo.toList()
+        ch_multiqc_logo.toList(),
+        ch_multiqc_replace_names.toList(),  // Added
+        ch_multiqc_sample_names.toList()    // Added
     )
 
     emit:
