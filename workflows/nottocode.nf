@@ -52,8 +52,7 @@ workflow NOTTOCODE {
     }
 
     if (!params.pfam_db) {
-        error "ERROR: missing --pfam_db pfam file. you can download it with: wget https://ftp.ebi.ac.uk/pub/databases/Pfam/current_release/Pfam-A.hmm.gz then
-gunzip Pfam-A.hmm.gz"
+        error "ERROR: missing --pfam_db pfam file. you can download it with: wget https://ftp.ebi.ac.uk/pub/databases/Pfam/current_release/Pfam-A.hmm.gz then gunzip Pfam-A.hmm.gz"
     }
 
 
