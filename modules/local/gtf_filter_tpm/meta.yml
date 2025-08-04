@@ -1,0 +1,48 @@
+name: "gtf_filter_tpm"
+description: Filter GTF files based on transcript TPM values
+keywords:
+  - gtf
+  - filter
+  - tpm
+  - transcript
+  - expression
+tools:
+  - "gawk":
+      description: "GNU implementation of the AWK programming language"
+      homepage: "https://www.gnu.org/software/gawk/"
+      documentation: "https://www.gnu.org/software/gawk/manual/"
+      tool_dev_url: "https://git.savannah.gnu.org/cgit/gawk.git"
+      licence: "GPL v3"
+
+input:
+  - meta:
+      type: map
+      description: |
+        Groovy Map containing sample information
+        e.g. [ id:'test', single_end:false ]
+  - gtf:
+      type: file
+      description: GTF annotation file with TPM values
+      pattern: "*.gtf"
+  - tpm_threshold:
+      type: float
+      description: Minimum TPM threshold for transcript filtering
+      pattern: "float"
+
+output:
+  - meta:
+      type: map
+      description: |
+        Groovy Map containing sample information
+        e.g. [ id:'test', single_end:false ]
+  - filtered_gtf:
+      type: file
+      description: Filtered GTF file containing only transcripts and exons above TPM threshold
+      pattern: "*_filter_TPM.gtf"
+  - versions:
+      type: file
+      description: File containing software versions
+      pattern: "versions.yml"
+
+authors:
+  - "@gleisonm"
