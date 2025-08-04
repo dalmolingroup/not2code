@@ -1,0 +1,60 @@
+name: "transdecoder_longorfs"
+description: "Identifica ORFs candidatas em sequências de transcritos"
+keywords:
+  - orf
+  - open reading frame
+  - protein coding
+  - transcripts
+  - translation
+tools:
+  - "transdecoder":
+      description: "TransDecoder identifies candidate coding regions within transcript sequences"
+      homepage: "https://github.com/TransDecoder/TransDecoder"
+      documentation: "https://github.com/TransDecoder/TransDecoder/wiki"
+      tool_dev_url: "https://github.com/TransDecoder/TransDecoder"
+      licence: "BSD-3-Clause"
+
+input:
+  - meta:
+      type: map
+      description: |
+        Groovy Map containing sample information
+        e.g. [ id:'test' ]
+  - fasta_file:
+      type: file
+      description: "Arquivo FASTA contendo sequências de transcritos"
+      pattern: "*.{fa,fasta,fna}"
+
+output:
+  - meta:
+      type: map
+      description: |
+        Groovy Map containing sample information
+        e.g. [ id:'test' ]
+  - transdecoder_dir:
+      type: directory
+      description: "Diretório completo do TransDecoder"
+      pattern: "*.transdecoder_dir/"
+  - longest_orfs_pep:
+      type: file
+      description: "Sequências peptídicas das ORFs mais longas"
+      pattern: "*.transdecoder_dir/longest_orfs.pep"
+  - longest_orfs_gff3:
+      type: file
+      description: "Anotações GFF3 das ORFs mais longas"
+      pattern: "*.transdecoder_dir/longest_orfs.gff3"
+  - longest_orfs_cds:
+      type: file
+      description: "Sequências CDS das ORFs mais longas"
+      pattern: "*.transdecoder_dir/longest_orfs.cds"
+  - log:
+      type: file
+      description: "Arquivo de log do processo"
+      pattern: "*.log"
+  - versions:
+      type: file
+      description: "File containing software versions"
+      pattern: "versions.yml"
+
+authors:
+  - "@gleisonm"
