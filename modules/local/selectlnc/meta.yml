@@ -1,0 +1,83 @@
+name: "select_lncrnas"
+description: "Seleciona lncRNAs baseado em critérios de potencial codificante e combina com anotação de referência"
+keywords:
+  - lncrna
+  - selection
+  - annotation
+  - gtf
+  - coding potential
+  - pfam domains
+tools:
+  - "r-base":
+      description: "R statistical computing environment"
+      homepage: "https://www.r-project.org/"
+      documentation: "https://www.r-project.org/"
+  - "tidyverse":
+      description: "Collection of R packages for data science"
+      homepage: "https://www.tidyverse.org/"
+      documentation: "https://www.tidyverse.org/"
+  - "rtracklayer":
+      description: "R interface to genome annotation files"
+      homepage: "https://bioconductor.org/packages/rtracklayer/"
+      documentation: "https://bioconductor.org/packages/rtracklayer/"
+
+input:
+  - meta:
+      type: map
+      description: |
+        Groovy Map containing sample information
+        e.g. [ id:'test' ]
+  - annotated_gtf:
+      type: file
+      description: "GTF anotado com informações de comparação"
+      pattern: "*.gtf"
+  - cpc2_results:
+      type: file
+      description: "Resultados do CPC2"
+      pattern: "*.txt"
+  - plek_results:
+      type: file
+      description: "Resultados do PLEK"
+      pattern: "*.txt"
+  - pfam_domtblout:
+      type: file
+      description: "Tabela de domínios Pfam do HMMER"
+      pattern: "*.domtblout"
+  - reference_gtf:
+      type: file
+      description: "GTF de referência do genoma"
+      pattern: "*.gtf"
+
+output:
+  - meta:
+      type: map
+      description: |
+        Groovy Map containing sample information
+        e.g. [ id:'test' ]
+  - lncrna_gtf:
+      type: file
+      description: "GTF contendo apenas lncRNAs selecionados"
+      pattern: "gtf_lncRNA.gtf"
+  - complete_gtf:
+      type: file
+      description: "GTF completo com todas as informações integradas"
+      pattern: "gtf_complete.gtf"
+  - combined_gtf:
+      type: file
+      description: "GTF combinado com anotação de referência"
+      pattern: "combined_stringtie_ncbi.gtf"
+  - final_gtf:
+      type: file
+      description: "GTF final com novos nomes para lncRNAs"
+      pattern: "combined_stringtie_ncbi_new_names.gtf"
+  - log:
+      type: file
+      description: "Arquivo de log detalhado do processo"
+      pattern: "*.log"
+  - versions:
+      type: file
+      description: "File containing software versions"
+      pattern: "versions.yml"
+
+authors:
+  - "@gleisonm"
