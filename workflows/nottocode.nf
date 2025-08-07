@@ -50,8 +50,12 @@ workflow NOTTOCODE {
         error "ERROR: missing --reference_genome fasta"
     }
 
+    if (!params.reference_gff) {
+        error "ERROR: missing --reference_gff annotation file"
+    }
+
     if (!params.reference_gtf) {
-        error "ERROR: missing --reference_gtf annotation file"
+    error "ERROR: missing --reference_gtf annotation file"
     }
 
     if (!params.pfam_db) {
@@ -101,6 +105,7 @@ workflow NOTTOCODE {
     // Refence files
     //
     ch_genome_fasta = file(params.reference_genome)
+    ch_reference_gff = file(params.reference_gff)
     ch_reference_gtf = file(params.reference_gtf)
 
     //
@@ -142,7 +147,7 @@ workflow NOTTOCODE {
     
     STRINGTIE_MERGE (
         ch_gtf_files,    
-        ch_reference_gtf    
+        ch_reference_gff    
     )
     ch_versions = ch_versions.mix(STRINGTIE_MERGE.out.versions)
 
@@ -162,7 +167,7 @@ workflow NOTTOCODE {
 
     GFFCOMPARE (
         ch_merged_gtf,
-        ch_reference_gtf
+        ch_reference_gff
     )
     ch_versions = ch_versions.mix(GFFCOMPARE.out.versions)
 
@@ -282,12 +287,16 @@ workflow NOTTOCODE {
     )
     ch_versions = ch_versions.mix(HMMER_HMMSEARCH.out.versions)
 
+
+
+    lncselect_script_ch = Channel.fromPath(params.lncselect)
     SELECT_LNCRNAS (
-        MSTRG_PREP.out.gtf_prep,
+        GFFCOMPARE.out.annotated_gtf,
         CPC2.out.cpc2_results,
         PLEK.out.plek_results,
         HMMER_HMMSEARCH.out.domain_summary,
-        ch_reference_gtf
+        ch_reference_gtf,
+        lncselect_script_ch
     )
      ch_versions = ch_versions.mix(SELECT_LNCRNAS.out.versions)
 
