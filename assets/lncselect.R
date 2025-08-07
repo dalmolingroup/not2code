@@ -70,8 +70,8 @@ gtf_lncRNA <- gtf_complete %>% filter(transcript_id %in% lncRNA) %>%
   mutate(transcript_biotype = ifelse(type == "transcript", "lncRNA", ""))
 
 
-rtracklayer::export(gtf_lncRNA, "gtf_lncRNA.gtf", format = gtf)
-rtracklayer::export(gtf_complete, "gtf_complete.gtf", format = gtf)
+rtracklayer::export(gtf_lncRNA, "gtf_lncRNA.gtf", format = "gtf")
+rtracklayer::export(gtf_complete, "gtf_complete.gtf", format = "gtf")
 
 rm(dup_reference_annot, gtf_complete, lncRNA)
 
@@ -122,7 +122,7 @@ combined_stringtie_ncbi <- dplyr::bind_rows(reference_filter, gtf_lncRNA)
 sum(gtf_lncRNA$transcript_id %in% reference$transcript_id) #0 is expected
 
 # Exportar como novo GTF
-rtracklayer::export(combined_stringtie_ncbi, "combined_stringtie_ncbi.gtf", format = gtf)
+rtracklayer::export(combined_stringtie_ncbi, "combined_stringtie_ncbi.gtf", format = "gtf")
 
 #rm(combined_stringtie_ncbi, gtf_lncRNA, reference, reference_filter)
 
@@ -165,7 +165,7 @@ combined_stringtie_ncbi_new_names <- combined_stringtie_ncbi_new_names %>%
 combined_stringtie_ncbi_new_names %>% dplyr::select(gene_id,gene_id_stringtie,
                                                     transcript_id, transcript_id_stringtie, class_code)
 
-rtracklayer::export(combined_stringtie_ncbi_new_names, "combined_stringtie_ncbi_new_names.gtf", format = gtf)
+rtracklayer::export(combined_stringtie_ncbi_new_names, "combined_stringtie_ncbi_new_names.gtf", format = "gtf")
 
     cat('"', Sys.getenv("TASK_PROCESS", "SELECT_LNCRNAS"), '":\n', file="versions.yml", sep="")
     cat('    r-base: "', R.version.string, '"\n', file="versions.yml", append=TRUE, sep="")

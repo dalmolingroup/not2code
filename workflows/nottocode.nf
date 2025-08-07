@@ -2,26 +2,27 @@
 nextflow.enable.dsl = 2
 
 //include { FASTQC                 } from '../modules/nf-core/fastqc/main'
-include { SAMPLESHEET_CHECK      } from '../modules/local/samplesheet_check/main'
-include { GTF_FILTER_TPM         } from '../modules/local/gtf_filter_tpm/main'
-include { STRINGTIE_MERGE        } from '../modules/nf-core/stringtie/merge/main'
-include { GFFCOMPARE             } from '../modules/nf-core/gffcompare/main'
-include { COMPARE_TRANSCRIPTOMES } from '../modules/local/compare_transcriptomes/main'
-include { GFFREAD                } from '../modules/nf-core/gffread/main'
-include { MSTRG_PREP             } from '../modules/local/mstrg/main'
-include { CPC2                   } from '../modules/local/cpc2/main'
-include { PLEK                   } from '../modules/local/plek/main'
-include { TRANSDECODER_LONGORFS  } from '../modules/local/transdecoder/main'
-include { HMMER_HMMPRESS         } from '../modules/nf-core/hmmer/hmmpress/main'
-include { HMMER_HMMSEARCH        } from '../modules/nf-core/hmmer/hmmsearch/main'
-include { SELECT_LNCRNAS         } from '../modules/local/selectlnc/main'
-include { XZ_DECOMPRESS          } from '../modules/nf-core/xz/decompress/main'  
-include { UNTAR                  } from '../modules/nf-core/untar/main'  
-include { MULTIQC                } from '../modules/nf-core/multiqc/main'
-include { paramsSummaryMap       } from 'plugin/nf-validation'
-include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
-include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
-include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_nottocode_pipeline'
+include { SAMPLESHEET_CHECK         } from '../modules/local/samplesheet_check/main'
+include { GTF_FILTER_TPM            } from '../modules/local/gtf_filter_tpm/main'
+include { STRINGTIE_MERGE           } from '../modules/nf-core/stringtie/merge/main'
+include { GFFCOMPARE                } from '../modules/nf-core/gffcompare/main'
+include { COMPARE_TRANSCRIPTOMES    } from '../modules/local/compare_transcriptomes/main'
+include { GFFREAD                   } from '../modules/nf-core/gffread/main'
+include { GFFREAD as GFFREAD_MERGED } from '../modules/nf-core/gffread/main'
+include { MSTRG_PREP                } from '../modules/local/mstrg/main'
+include { CPC2                      } from '../modules/local/cpc2/main'
+include { PLEK                      } from '../modules/local/plek/main'
+include { TRANSDECODER_LONGORFS     } from '../modules/local/transdecoder/main'
+include { HMMER_HMMPRESS            } from '../modules/nf-core/hmmer/hmmpress/main'
+include { HMMER_HMMSEARCH           } from '../modules/nf-core/hmmer/hmmsearch/main'
+include { SELECT_LNCRNAS            } from '../modules/local/selectlnc/main'
+include { XZ_DECOMPRESS             } from '../modules/nf-core/xz/decompress/main'
+include { UNTAR                     } from '../modules/nf-core/untar/main'
+include { MULTIQC                   } from '../modules/nf-core/multiqc/main'
+include { paramsSummaryMap          } from 'plugin/nf-validation'
+include { paramsSummaryMultiqc      } from '../subworkflows/nf-core/utils_nfcore_pipeline'
+include { softwareVersionsToYAML    } from '../subworkflows/nf-core/utils_nfcore_pipeline'
+include { methodsDescriptionText    } from '../subworkflows/local/utils_nfcore_nottocode_pipeline'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -300,6 +301,10 @@ workflow NOTTOCODE {
     )
      ch_versions = ch_versions.mix(SELECT_LNCRNAS.out.versions)
 
+    GFFREAD_MERGED (
+        SELECT_LNCRNAS.out.final_gtf,
+        ch_genome_fasta
+    )
 
     //
     // Collate and save software versions
