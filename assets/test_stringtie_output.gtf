@@ -1,6 +1,8 @@
 # StringTie version 2.2.1 - simulated output for sarscov2 genome (MT192765.1)
 # Test data compatible with nf-core/test-datasets sarscov2 genome
 # All transcripts have TPM >= 1.5 to pass StringTie merge -T 1 threshold
+# MSTRG.1-7: regions overlapping known genes (will get class_code '=' or similar)
+# MSTRG.8-9: novel intergenic regions (will get class_code 'u' - novel, not overlapping known genes)
 MT192765.1	StringTie	transcript	259	21548	1000	+	.	gene_id "MSTRG.1"; transcript_id "MSTRG.1.1"; cov "100.000000"; FPKM "50.000000"; TPM "5.000000";
 MT192765.1	StringTie	exon	259	13461	1000	+	.	gene_id "MSTRG.1"; transcript_id "MSTRG.1.1"; exon_number "1"; cov "100.000000";
 MT192765.1	StringTie	exon	13461	21545	1000	+	.	gene_id "MSTRG.1"; transcript_id "MSTRG.1.1"; exon_number "2"; cov "100.000000";
@@ -16,3 +18,7 @@ MT192765.1	StringTie	transcript	27195	27380	150	+	.	gene_id "MSTRG.6"; transcrip
 MT192765.1	StringTie	exon	27195	27377	150	+	.	gene_id "MSTRG.6"; transcript_id "MSTRG.6.1"; exon_number "1"; cov "15.000000";
 MT192765.1	StringTie	transcript	28267	29526	400	+	.	gene_id "MSTRG.7"; transcript_id "MSTRG.7.1"; cov "40.000000"; FPKM "20.000000"; TPM "2.000000";
 MT192765.1	StringTie	exon	28267	29523	400	+	.	gene_id "MSTRG.7"; transcript_id "MSTRG.7.1"; exon_number "1"; cov "40.000000";
+MT192765.1	StringTie	transcript	100	200	300	+	.	gene_id "MSTRG.8"; transcript_id "MSTRG.8.1"; cov "30.000000"; FPKM "15.000000"; TPM "3.000000";
+MT192765.1	StringTie	exon	100	200	300	+	.	gene_id "MSTRG.8"; transcript_id "MSTRG.8.1"; exon_number "1"; cov "30.000000";
+MT192765.1	StringTie	transcript	21550	21555	200	-	.	gene_id "MSTRG.9"; transcript_id "MSTRG.9.1"; cov "20.000000"; FPKM "10.000000"; TPM "2.000000";
+MT192765.1	StringTie	exon	21550	21555	200	-	.	gene_id "MSTRG.9"; transcript_id "MSTRG.9.1"; exon_number "1"; cov "20.000000";

@@ -81,7 +81,7 @@ process COMPARE_TRANSCRIPTOMES {
     cat("Verificação da diferença:", actual_diff == expected_diff, "\\n")
     
     # Filtrar GTF removendo proteínas codificantes
-    cat("Filtrando GTF para remover proteínas codificantes...\\n")
+    cat("Filtrando GTF para remover proteínas codificantes\\n")
     gtf_remove_prot <- dup_reference_annot %>% 
         filter(transcript_id %in% classes_different) %>% 
         filter(strand %in% c("+", "-"))
@@ -98,7 +98,22 @@ process COMPARE_TRANSCRIPTOMES {
     output_file <- "${prefix}.remove_prot.gtf"
     cat("Exportando GTF filtrado para:", output_file, "\\n")
     
-    rtracklayer::export(gtf_remove_prot, output_file, format = "gtf")
+    if (nrow(gtf_remove_prot) == 0) {
+        cat("AVISO: Nenhum transcrito novel encontrado (todos são class_code '=').\\n")
+        cat("Criando arquivo GTF vazio de saída.\\n")
+        file.create(output_file)
+    } else {
+        # Converter data.frame para GRanges antes de exportar
+        gtf_granges <- GenomicRanges::makeGRangesFromDataFrame(
+            gtf_remove_prot,
+            keep.extra.columns = TRUE,
+            seqnames.field = "seqnames",
+            start.field = "start",
+            end.field = "end",
+            strand.field = "strand"
+        )
+        rtracklayer::export(gtf_granges, output_file, format = "gtf")
+    }
     
     cat("Análise concluída com sucesso!\\n")
     sink()
