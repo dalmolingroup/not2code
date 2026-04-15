@@ -1,2 +1,2 @@
 sample,gtf
-TEST_SAMPLE,https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/sarscov2/genome/genome.gtf
+TEST_SAMPLE,assets/test_stringtie_output.gtf

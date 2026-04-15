@@ -1,0 +1,18 @@
+# StringTie version 2.2.1 - simulated output for sarscov2 genome (MT192765.1)
+# Test data compatible with nf-core/test-datasets sarscov2 genome
+# All transcripts have TPM >= 1.5 to pass StringTie merge -T 1 threshold
+MT192765.1	StringTie	transcript	259	21548	1000	+	.	gene_id "MSTRG.1"; transcript_id "MSTRG.1.1"; cov "100.000000"; FPKM "50.000000"; TPM "5.000000";
+MT192765.1	StringTie	exon	259	13461	1000	+	.	gene_id "MSTRG.1"; transcript_id "MSTRG.1.1"; exon_number "1"; cov "100.000000";
+MT192765.1	StringTie	exon	13461	21545	1000	+	.	gene_id "MSTRG.1"; transcript_id "MSTRG.1.1"; exon_number "2"; cov "100.000000";
+MT192765.1	StringTie	transcript	21556	25377	1000	+	.	gene_id "MSTRG.2"; transcript_id "MSTRG.2.1"; cov "80.000000"; FPKM "40.000000"; TPM "4.000000";
+MT192765.1	StringTie	exon	21556	25374	1000	+	.	gene_id "MSTRG.2"; transcript_id "MSTRG.2.1"; exon_number "1"; cov "80.000000";
+MT192765.1	StringTie	transcript	25386	26213	500	+	.	gene_id "MSTRG.3"; transcript_id "MSTRG.3.1"; cov "50.000000"; FPKM "25.000000"; TPM "2.500000";
+MT192765.1	StringTie	exon	25386	26210	500	+	.	gene_id "MSTRG.3"; transcript_id "MSTRG.3.1"; exon_number "1"; cov "50.000000";
+MT192765.1	StringTie	transcript	26238	26465	200	+	.	gene_id "MSTRG.4"; transcript_id "MSTRG.4.1"; cov "20.000000"; FPKM "10.000000"; TPM "2.000000";
+MT192765.1	StringTie	exon	26238	26462	200	+	.	gene_id "MSTRG.4"; transcript_id "MSTRG.4.1"; exon_number "1"; cov "20.000000";
+MT192765.1	StringTie	transcript	26516	27184	300	+	.	gene_id "MSTRG.5"; transcript_id "MSTRG.5.1"; cov "30.000000"; FPKM "15.000000"; TPM "1.500000";
+MT192765.1	StringTie	exon	26516	27181	300	+	.	gene_id "MSTRG.5"; transcript_id "MSTRG.5.1"; exon_number "1"; cov "30.000000";
+MT192765.1	StringTie	transcript	27195	27380	150	+	.	gene_id "MSTRG.6"; transcript_id "MSTRG.6.1"; cov "15.000000"; FPKM "7.500000"; TPM "1.750000";
+MT192765.1	StringTie	exon	27195	27377	150	+	.	gene_id "MSTRG.6"; transcript_id "MSTRG.6.1"; exon_number "1"; cov "15.000000";
+MT192765.1	StringTie	transcript	28267	29526	400	+	.	gene_id "MSTRG.7"; transcript_id "MSTRG.7.1"; cov "40.000000"; FPKM "20.000000"; TPM "2.000000";
+MT192765.1	StringTie	exon	28267	29523	400	+	.	gene_id "MSTRG.7"; transcript_id "MSTRG.7.1"; exon_number "1"; cov "40.000000";

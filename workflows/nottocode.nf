@@ -93,9 +93,22 @@ workflow NOTTOCODE {
             meta.id = row.sample
             meta.single_end = true
             
-            def gtf_file = file(row.gtf)
-            if (!gtf_file.exists()) {
-                error("ERROR: Arquivo GTF não encontrado: ${row.gtf}")
+            // Resolve GTF path: absolute, URL, or relative to projectDir
+            def gtf_path = row.gtf.trim()
+            def gtf_file
+            if (gtf_path.startsWith('http://') || gtf_path.startsWith('https://') || gtf_path.startsWith('s3://')) {
+                gtf_file = file(gtf_path)
+            } else if (gtf_path.startsWith('/')) {
+                gtf_file = file(gtf_path)
+                if (!gtf_file.exists()) {
+                    error("ERROR: Arquivo GTF não encontrado: ${gtf_path}")
+                }
+            } else {
+                // Path relativo: resolver relativo ao projectDir
+                gtf_file = file("${projectDir}/${gtf_path}")
+                if (!gtf_file.exists()) {
+                    error("ERROR: Arquivo GTF não encontrado: ${projectDir}/${gtf_path}")
+                }
             }
             
             return [meta, gtf_file]
