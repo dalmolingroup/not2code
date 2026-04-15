@@ -245,8 +245,7 @@ workflow NOTTOCODE {
     //
 
     CPC2 (
-        GFFREAD.out.gffread_fasta,
-        file(params.cpc2)
+        GFFREAD.out.gffread_fasta
     )
     ch_versions = ch_versions.mix(CPC2.out.versions)
 
