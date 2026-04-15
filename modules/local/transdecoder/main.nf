@@ -37,72 +37,60 @@ process TRANSDECODER_LONGORFS {
     echo "Data/hora de início: \$(date)" >> ${prefix}.log
     
     # Contar número de sequências no arquivo FASTA
-    # Usar || true para evitar exit 1 quando grep não encontra matches (arquivo vazio)
-    seq_count=\$(grep -c "^>" ${fasta_file} || true)
-    seq_count=\${seq_count:-0}
+    seq_count=\$(grep -c "^>" ${fasta_file})
     echo "Número de sequências a serem analisadas: \$seq_count" >> ${prefix}.log
     
-    # Verificar se o arquivo FASTA tem sequências
-    if [ "\$seq_count" -eq 0 ]; then
-        echo "AVISO: Arquivo FASTA vazio ou sem sequências. Criando outputs vazios." >> ${prefix}.log
-        mkdir -p ${output_dir}
-        touch ${output_dir}/longest_orfs.pep
-        touch ${output_dir}/longest_orfs.gff3
-        touch ${output_dir}/longest_orfs.cds
-        echo "Análise ignorada (FASTA vazio)" >> ${prefix}.log
-    else
-        # Executar TransDecoder.LongOrfs
-        echo "Executando TransDecoder.LongOrfs..." >> ${prefix}.log
-        TransDecoder.LongOrfs \\
-            -t ${fasta_file} \\
-            --output_dir ${output_dir} \\
-            ${args} \\
-            2>&1 | tee -a ${prefix}.log
+    # Executar TransDecoder.LongOrfs
+    echo "Executando TransDecoder.LongOrfs..." >> ${prefix}.log
+    TransDecoder.LongOrfs \\
+        -t ${fasta_file} \\
+        --output_dir ${output_dir} \\
+        ${args} \\
+        2>&1 | tee -a ${prefix}.log
+    
+    # Verificar se os arquivos de saída foram criados
+    if [ -d "${output_dir}" ]; then
+        echo "TransDecoder.LongOrfs concluído com sucesso" >> ${prefix}.log
         
-        # Verificar se os arquivos de saída foram criados
-        if [ -d "${output_dir}" ]; then
-            echo "TransDecoder.LongOrfs concluído com sucesso" >> ${prefix}.log
-            
-            # Contar ORFs identificadas
-            if [ -f "${output_dir}/longest_orfs.pep" ]; then
-                orf_count=\$(grep -c "^>" ${output_dir}/longest_orfs.pep || true)
-                orf_count=\${orf_count:-0}
-                echo "Número de ORFs longas identificadas: \$orf_count" >> ${prefix}.log
-            fi
-            
-            # Listar arquivos criados
-            echo "Arquivos criados no diretório TransDecoder:" >> ${prefix}.log
-            ls -la ${output_dir}/ >> ${prefix}.log
-            
-            # Estatísticas dos comprimentos das ORFs
-            if [ -f "${output_dir}/longest_orfs.pep" ] && [ "\$orf_count" -gt 0 ]; then
-                echo "Estatísticas dos comprimentos das ORFs:" >> ${prefix}.log
-                grep -v "^>" ${output_dir}/longest_orfs.pep | awk '{print length(\$0)}' | sort -n | awk '
-                BEGIN { sum = 0; count = 0; }
-                { 
-                    lengths[count] = \$1; 
-                    sum += \$1; 
-                    count++; 
-                }
-                END {
-                    if (count > 0) {
-                        mean = sum / count;
-                        if (count % 2 == 1) {
-                            median = lengths[int(count/2)];
-                        } else {
-                            median = (lengths[count/2-1] + lengths[count/2]) / 2;
-                        }
-                        print "  Comprimento médio: " mean " aa";
-                        print "  Comprimento mediano: " median " aa";
-                        print "  Comprimento mínimo: " lengths[0] " aa";
-                        print "  Comprimento máximo: " lengths[count-1] " aa";
-                    }
-                }' >> ${prefix}.log
-            fi
-        else
-            echo "ERRO: Diretório de saída não foi criado" >> ${prefix}.log
-            exit 1
+        # Contar ORFs identificadas
+        if [ -f "${output_dir}/longest_orfs.pep" ]; then
+            orf_count=\$(grep -c "^>" ${output_dir}/longest_orfs.pep)
+            echo "Número de ORFs longas identificadas: \$orf_count" >> ${prefix}.log
         fi
+        
+        # Listar arquivos criados
+        echo "Arquivos criados no diretório TransDecoder:" >> ${prefix}.log
+        ls -la ${output_dir}/ >> ${prefix}.log
+        
+        # Estatísticas dos comprimentos das ORFs
+        if [ -f "${output_dir}/longest_orfs.pep" ]; then
+            echo "Estatísticas dos comprimentos das ORFs:" >> ${prefix}.log
+            grep -v "^>" ${output_dir}/longest_orfs.pep | awk '{print length(\$0)}' | sort -n | awk '
+            BEGIN { sum = 0; count = 0; }
+            { 
+                lengths[count] = \$1; 
+                sum += \$1; 
+                count++; 
+            }
+            END {
+                if (count > 0) {
+                    mean = sum / count;
+                    if (count % 2 == 1) {
+                        median = lengths[int(count/2)];
+                    } else {
+                        median = (lengths[count/2-1] + lengths[count/2]) / 2;
+                    }
+                    print "  Comprimento médio: " mean " aa";
+                    print "  Comprimento mediano: " median " aa";
+                    print "  Comprimento mínimo: " lengths[0] " aa";
+                    print "  Comprimento máximo: " lengths[count-1] " aa";
+                }
+            }' >> ${prefix}.log
+        fi
+        
+    else
+        echo "ERRO: Diretório de saída não foi criado" >> ${prefix}.log
+        exit 1
     fi
     
     echo "Data/hora de término: \$(date)" >> ${prefix}.log
