@@ -1,0 +1,313 @@
+
+
+                                          ,--./,-.
+          ___     __   __   __   ___     /,-._.--~\ 
+    |\ | |__  __ /  ` /  \ |__) |__         }  {
+    | \| |       \__, \__/ |  \ |___     \`-._,-`-,
+                                          `._,._,'
+
+    nf-core/tools version 3.5.2 - https://nf-co.re
+
+
+
+INFO     Testing pipeline: .                                                    
+
+
+
+
+
+
+╭─ [?] 3 Pipeline Tests Ignored ───────────────────────────────────────────────╮
+│                                                                              │
+│ files_unchanged: Required pipeline config not found -                        │
+│ {'manifest.contributors'}                                                    │
+│ actions_nf_test: '.github/workflows/nf-test.yml' not found                   │
+│ rocrate_readme_sync: ro-crate-metadata.json not found                        │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ [!] 22 Pipeline Test Warnings ──────────────────────────────────────────────╮
+│                                                                              │
+│ files_exist: File not found: conf/igenomes_ignored.config                    │
+│ files_exist: File not found: ro-crate-metadata.json                          │
+│ nextflow_config: nf-validation has been detected in the pipeline. Please     │
+│ migrate to nf-schema:                                                        │
+│ https://nextflow-io.github.io/nf-schema/latest/migration_guide/              │
+│ readme: README did not have a Nextflow minimum version badge.                │
+│ readme: README did not have an nf-core template version badge.               │
+│ readme: README contains the placeholder zenodo.XXXXXXX. This should be       │
+│ replaced with the zenodo doi (after the first release).                      │
+│ pipeline_todos: TODO string in README.md: update the following command to    │
+│ include all required parameters for a minimal example                        │
+│ pipeline_todos: TODO string in README.md: Add citation for pipeline after    │
+│ first release. Uncomment lines below and update Zenodo doi and badge at the  │
+│ top of this file.                                                            │
+│ pipeline_todos: TODO string in README.md: Add bibliography of tools and data │
+│ used in your pipeline                                                        │
+│ pipeline_todos: TODO string in main.nf: Remove this line if you don't need a │
+│ FASTA file                                                                   │
+│ pipeline_todos: TODO string in awsfulltest.yml: You can customise AWS full   │
+│ pipeline tests as required                                                   │
+│ pipeline_todos: TODO string in ci.yml: You can customise CI pipeline run     │
+│ tests as required                                                            │
+│ pipeline_todos: TODO string in methods_description_template.yml: #Update the │
+│ HTML below to your preferred methods description, e.g. add publication       │
+│ citation for this pipeline                                                   │
+│ pipeline_todos: TODO string in base.config: Check the defaults for all       │
+│ processes                                                                    │
+│ pipeline_todos: TODO string in base.config: Customise requirements for       │
+│ specific processes.                                                          │
+│ pipeline_todos: TODO string in test_full.config: Specify the paths to your   │
+│ full test data ( on nf-core/test-datasets or directly in repositories, e.g.  │
+│ SRA)                                                                         │
+│ pipeline_todos: TODO string in test_full.config: Give any required params    │
+│ for the test so that command line flags are not needed                       │
+│ pipeline_todos: TODO string in output.md: Write this documentation           │
+│ describing your workflow's output                                            │
+│ pipeline_todos: TODO string in usage.md: Add documentation about anything    │
+│ specific to running your pipeline. For general topics, please point to (and  │
+│ add to) the main nf-core website.                                            │
+│ pipeline_todos: TODO string in main.nf: Optionally add in-text citation      │
+│ tools to this list.                                                          │
+│ pipeline_todos: TODO string in main.nf: Optionally add bibliographic entries │
+│ to this list.                                                                │
+│ pipeline_todos: TODO string in main.nf: Only uncomment below if logic in     │
+│ toolCitationText/toolBibliographyText has been filled!                       │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ [✗] 25 Pipeline Tests Failed ───────────────────────────────────────────────╮
+│                                                                              │
+│ files_exist: File not found: .github/workflows/nf-test.yml                   │
+│ files_exist: File not found: .github/actions/get-shards/action.yml           │
+│ files_exist: File not found: .github/actions/nf-test/action.yml              │
+│ files_exist: File not found: nf-test.config                                  │
+│ files_exist: File not found: tests/default.nf.test                           │
+│ nextflow_config: Config variable (incorrectly) found: params.max_cpus        │
+│ nextflow_config: Config variable (incorrectly) found: params.max_memory      │
+│ nextflow_config: Config variable (incorrectly) found: params.max_time        │
+│ nextflow_config: Lines for loading custom profiles not found. File should    │
+│ contain:                                                                     │
+│                                                                              │
+│                                                                              │
+│  // Load nf-core custom profiles from different institutions                 │
+│  includeConfig params.custom_config_base && (!System.getenv('NXF_OFFLINE')   │
+│  || !params.custom_config_base.startsWith('http')) ?                         │
+│  "${params.custom_config_base}/nfcore_custom.config" : "/dev/null"           │
+│                                                                              │
+│ nf_test_content: 'tests/nextflow.config' does not exist                      │
+│ nf_test_content: 'nf-test.config' does not exist                             │
+│ actions_awsfulltest: .github/workflows/awsfulltest.yml is not triggered      │
+│ correctly                                                                    │
+│ schema_params: Param tpm_threshold from nextflow config not found in         │
+│ nextflow_schema.json                                                         │
+│ schema_params: Param pfam_db from nextflow config not found in               │
+│ nextflow_schema.json                                                         │
+│ schema_params: Param multiqc_replace_names from nextflow config not found in │
+│ nextflow_schema.json                                                         │
+│ schema_params: Param multiqc_sample_names from nextflow config not found in  │
+│ nextflow_schema.json                                                         │
+│ schema_params: Param mstrg_prep_script from nextflow config not found in     │
+│ nextflow_schema.json                                                         │
+│ schema_params: Param plek from nextflow config not found in                  │
+│ nextflow_schema.json                                                         │
+│ schema_params: Param lncselect from nextflow config not found in             │
+│ nextflow_schema.json                                                         │
+│ schema_params: Param filter_by_tpm from nextflow config not found in         │
+│ nextflow_schema.json                                                         │
+│ schema_params: Param reference_genome from nextflow config not found in      │
+│ nextflow_schema.json                                                         │
+│ schema_params: Param reference_gtf from nextflow config not found in         │
+│ nextflow_schema.json                                                         │
+│ schema_params: Param validationSkipDuplicateCheck from nextflow config not   │
+│ found in nextflow_schema.json                                                │
+│ schema_params: Param validationS3PathCheck from nextflow config not found in │
+│ nextflow_schema.json                                                         │
+│ schema_params: Param monochromeLogs from nextflow config not found in        │
+│ nextflow_schema.json                                                         │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭─ [!] 7 Module Test Warnings ─────────────────────────────────────────────────╮
+│                 ╷                             ╷                              │
+│ Module name     │ File path                   │ Test message                 │
+│╶────────────────┼─────────────────────────────┼─────────────────────────────╴│
+│ fastqc          │ modules/nf-core/fastqc      │ module_version: New version  │
+│                 │                             │ available                    │
+│ gffcompare      │ modules/nf-core/gffcompare  │ module_version: New version  │
+│                 │                             │ available                    │
+│ gffread         │ modules/nf-core/gffread     │ module_version: New version  │
+│                 │                             │ available                    │
+│ multiqc         │ modules/nf-core/multiqc     │ module_version: New version  │
+│                 │                             │ available                    │
+│ stringtie/merge │ modules/nf-core/stringtie/… │ module_version: New version  │
+│                 │                             │ available                    │
+│ untar           │ modules/nf-core/untar       │ module_version: New version  │
+│                 │                             │ available                    │
+│ xz/decompress   │ modules/nf-core/xz/decompr… │ module_version: New version  │
+│                 │                             │ available                    │
+│                 ╵                             ╵                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ [✗] 4 Module Tests Failed ──────────────────────────────────────────────────╮
+│                 ╷                             ╷                              │
+│ Module name     │ File path                   │ Test message                 │
+│╶────────────────┼─────────────────────────────┼─────────────────────────────╴│
+│ gffcompare      │ modules/nf-core/gffcompare… │ check_local_copy: Local copy │
+│                 │                             │ of module does not match     │
+│                 │                             │ remote                       │
+│ hmmer/hmmpress  │ modules/nf-core/hmmer/hmmp… │ check_local_copy: Local copy │
+│                 │                             │ of module does not match     │
+│                 │                             │ remote                       │
+│ hmmer/hmmsearch │ modules/nf-core/hmmer/hmms… │ check_local_copy: Local copy │
+│                 │                             │ of module does not match     │
+│                 │                             │ remote                       │
+│ multiqc         │ modules/nf-core/multiqc/ma… │ check_local_copy: Local copy │
+│                 │                             │ of module does not match     │
+│                 │                             │ remote                       │
+│                 ╵                             ╵                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭─ [!] 18 Subworkflow Test Warnings ───────────────────────────────────────────╮
+│                                 ╷                     ╷                      │
+│ Subworkflow name                │ File path           │ Test message         │
+│╶────────────────────────────────┼─────────────────────┼─────────────────────╴│
+│ utils_nfcore_nottocode_pipeline │ subworkflows/local… │ main_nf_include_vers │
+│                                 │                     │ ions: Included       │
+│                                 │                     │ component            │
+│                                 │                     │ 'UTILS_NEXTFLOW_PIPE │
+│                                 │                     │ LINE' versions are   │
+│                                 │                     │ not added in         │
+│                                 │                     │ main.nf. Can be      │
+│                                 │                     │ ignored if the       │
+│                                 │                     │ module is using      │
+│                                 │                     │ topic channels       │
+│ utils_nfcore_nottocode_pipeline │ subworkflows/local… │ main_nf_include_vers │
+│                                 │                     │ ions: Included       │
+│                                 │                     │ component            │
+│                                 │                     │ 'UTILS_NFCORE_PIPELI │
+│                                 │                     │ NE' versions are not │
+│                                 │                     │ added in main.nf.    │
+│                                 │                     │ Can be ignored if    │
+│                                 │                     │ the module is using  │
+│                                 │                     │ topic channels       │
+│ utils_nfcore_nottocode_pipeline │ subworkflows/local… │ main_nf_include_vers │
+│                                 │                     │ ions: Included       │
+│                                 │                     │ component            │
+│                                 │                     │ 'UTILS_NFVALIDATION_ │
+│                                 │                     │ PLUGIN' versions are │
+│                                 │                     │ not added in         │
+│                                 │                     │ main.nf. Can be      │
+│                                 │                     │ ignored if the       │
+│                                 │                     │ module is using      │
+│                                 │                     │ topic channels       │
+│ utils_nfcore_nottocode_pipeline │ subworkflows/local… │ main_nf_include_vers │
+│                                 │                     │ ions: Included       │
+│                                 │                     │ component            │
+│                                 │                     │ 'completionEmail'    │
+│                                 │                     │ versions are not     │
+│                                 │                     │ added in main.nf.    │
+│                                 │                     │ Can be ignored if    │
+│                                 │                     │ the module is using  │
+│                                 │                     │ topic channels       │
+│ utils_nfcore_nottocode_pipeline │ subworkflows/local… │ main_nf_include_vers │
+│                                 │                     │ ions: Included       │
+│                                 │                     │ component            │
+│                                 │                     │ 'completionSummary'  │
+│                                 │                     │ versions are not     │
+│                                 │                     │ added in main.nf.    │
+│                                 │                     │ Can be ignored if    │
+│                                 │                     │ the module is using  │
+│                                 │                     │ topic channels       │
+│ utils_nfcore_nottocode_pipeline │ subworkflows/local… │ main_nf_include_vers │
+│                                 │                     │ ions: Included       │
+│                                 │                     │ component            │
+│                                 │                     │ 'dashedLine'         │
+│                                 │                     │ versions are not     │
+│                                 │                     │ added in main.nf.    │
+│                                 │                     │ Can be ignored if    │
+│                                 │                     │ the module is using  │
+│                                 │                     │ topic channels       │
+│ utils_nfcore_nottocode_pipeline │ subworkflows/local… │ main_nf_include_vers │
+│                                 │                     │ ions: Included       │
+│                                 │                     │ component            │
+│                                 │                     │ 'fromSamplesheet'    │
+│                                 │                     │ versions are not     │
+│                                 │                     │ added in main.nf.    │
+│                                 │                     │ Can be ignored if    │
+│                                 │                     │ the module is using  │
+│                                 │                     │ topic channels       │
+│ utils_nfcore_nottocode_pipeline │ subworkflows/local… │ main_nf_include_vers │
+│                                 │                     │ ions: Included       │
+│                                 │                     │ component            │
+│                                 │                     │ 'imNotification'     │
+│                                 │                     │ versions are not     │
+│                                 │                     │ added in main.nf.    │
+│                                 │                     │ Can be ignored if    │
+│                                 │                     │ the module is using  │
+│                                 │                     │ topic channels       │
+│ utils_nfcore_nottocode_pipeline │ subworkflows/local… │ main_nf_include_vers │
+│                                 │                     │ ions: Included       │
+│                                 │                     │ component            │
+│                                 │                     │ 'nfCoreLogo'         │
+│                                 │                     │ versions are not     │
+│                                 │                     │ added in main.nf.    │
+│                                 │                     │ Can be ignored if    │
+│                                 │                     │ the module is using  │
+│                                 │                     │ topic channels       │
+│ utils_nfcore_nottocode_pipeline │ subworkflows/local… │ main_nf_include_vers │
+│                                 │                     │ ions: Included       │
+│                                 │                     │ component            │
+│                                 │                     │ 'paramsSummaryMap'   │
+│                                 │                     │ versions are not     │
+│                                 │                     │ added in main.nf.    │
+│                                 │                     │ Can be ignored if    │
+│                                 │                     │ the module is using  │
+│                                 │                     │ topic channels       │
+│ utils_nfcore_nottocode_pipeline │ subworkflows/local… │ main_nf_include_vers │
+│                                 │                     │ ions: Included       │
+│                                 │                     │ component            │
+│                                 │                     │ 'workflowCitation'   │
+│                                 │                     │ versions are not     │
+│                                 │                     │ added in main.nf.    │
+│                                 │                     │ Can be ignored if    │
+│                                 │                     │ the module is using  │
+│                                 │                     │ topic channels       │
+│ utils_nfcore_nottocode_pipeline │ subworkflows/local… │ meta_yml_exists:     │
+│                                 │                     │ Subworkflow meta.yml │
+│                                 │                     │ does not exist       │
+│ utils_nfcore_nottocode_pipeline │ subworkflows/local… │ subworkflow_todo:    │
+│                                 │                     │ TODO string in       │
+│                                 │                     │ main.nf: Only        │
+│                                 │                     │ uncomment below if   │
+│                                 │                     │ logic in             │
+│                                 │                     │ toolCitationText/too │
+│                                 │                     │ lBibliographyText    │
+│                                 │                     │ has been filled!     │
+│ utils_nfcore_nottocode_pipeline │ subworkflows/local… │ subworkflow_todo:    │
+│                                 │                     │ TODO string in       │
+│                                 │                     │ main.nf: Optionally  │
+│                                 │                     │ add bibliographic    │
+│                                 │                     │ entries to this      │
+│                                 │                     │ list.                │
+│ utils_nfcore_nottocode_pipeline │ subworkflows/local… │ subworkflow_todo:    │
+│                                 │                     │ TODO string in       │
+│                                 │                     │ main.nf: Optionally  │
+│                                 │                     │ add in-text citation │
+│                                 │                     │ tools to this list.  │
+│ utils_nextflow_pipeline         │ subworkflows/nf-co… │ subworkflow_version: │
+│                                 │                     │ New version          │
+│                                 │                     │ available            │
+│ utils_nfcore_pipeline           │ subworkflows/nf-co… │ subworkflow_version: │
+│                                 │                     │ New version          │
+│                                 │                     │ available            │
+│ utils_nfvalidation_plugin       │ subworkflows/nf-co… │ subworkflow_version: │
+│                                 │                     │ New version          │
+│                                 │                     │ available            │
+│                                 ╵                     ╵                      │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭───────────────────────╮
+│ LINT RESULTS SUMMARY  │
+├───────────────────────┤
+│ [✔] 200 Tests Passed  │
+│ [?]   3 Tests Ignored │
+│ [!]  47 Test Warnings │
+│ [✗]  29 Tests Failed  │
+╰───────────────────────╯

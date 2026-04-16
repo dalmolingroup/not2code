@@ -101,21 +101,28 @@ Each row represents a gtf file.
 
 Now, you can run the pipeline using:
 
-<!-- TODO nf-core: update the following command to include all required parameters for a minimal example -->
-
 ```bash
 nextflow run nf-core/nottocode \
   --input /path/to/samplesheet.csv \
   --reference_gtf /path/to/genome.gff \
   --reference_genome /path/to/genome.fna \
-  --outdir results \
   --pfam_db /path/to/Pfam-A.hmm \
+  --outdir results
 ```
 
 
 ## Pipeline output
 
 To see the results of an example test run with a full size dataset refer to the [results](https://nf-co.re/nottocode/results) tab on the nf-core website pipeline page.
+
+The pipeline will create a simplified output structure under the designated `--outdir` parameter (e.g. `results/`):
+
+* `lncRNA_candidates/`: Contains the final GTF files for identified lncRNAs.
+* `coding_potential/`: Contains the evaluation of coding/non-coding capability from tools like CPC2, PLEK, and HMMER scans.
+* `transcriptome_assembly/`: Contains intermediate merged transcriptomes, and GTF files from gffcompare and TPM filtering.
+* `multiqc/`: General aggregate quality control report.
+* `pipeline_info/`: Generic logs and reports relating to the execution of the Nextflow pipeline.
+
 For more details about the output files and reports, please refer to the
 [output documentation](https://nf-co.re/nottocode/output).
 
@@ -133,10 +140,7 @@ For further information or help, don't hesitate to get in touch on the [Slack `#
 
 ## Citations
 
-<!-- TODO nf-core: Add citation for pipeline after first release. Uncomment lines below and update Zenodo doi and badge at the top of this file. -->
-<!-- If you use nf-core/nottocode for your analysis, please cite it using the following doi: [10.5281/zenodo.XXXXXX](https://doi.org/10.5281/zenodo.XXXXXX) -->
-
-<!-- TODO nf-core: Add bibliography of tools and data used in your pipeline -->
+If you use nf-core/nottocode for your analysis, please cite it using its Digital Object Identifier (DOI).
 
 An extensive list of references for the tools used by the pipeline can be found in the [`CITATIONS.md`](CITATIONS.md) file.
 
