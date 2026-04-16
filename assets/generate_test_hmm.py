@@ -22,11 +22,11 @@ import sys
 import os
 import textwrap
 
-# Sequência proteica de teste (Globina humana - proteína bem caracterizada)
-# Suficientemente longa para TransDecoder e para hmmbuild criar um HMM válido
+# Sequence of MSTRG.5.1.p1 from TransDecoder (generated from the test GTF on chr22 intergenic region)
+# We use this so HMMER successfully finds a match during the test, ensuring domtblout is not empty!
 TEST_SEQUENCE = """\
-MVHLTPEEKSAVTALWGKVNVDEVGGEALGRLLVVYPWTQRFFESFGDLSTPDAVMGNPKVKAHGKKVLGAFSDGLAHLD
-NLKGTFATLSELHCDKLHVDPENFRLLGNVLVCVLAHHFGKEFTPPVQAAYQKVVAGVANALAHKYH
+SLRLLGREHPINYPGPIYARGLSHSCSTALLSHWHRELLGAPGFQIGSRESPLFSDPQTLLWILIVLSP\
+ISLLGTHWEVSRIPVRDSTTISLILTLTFFLFLPS
 """.replace('\n', '')
 
 STOCKHOLM_CONTENT = f"""# STOCKHOLM 1.0
@@ -50,18 +50,8 @@ def main():
         f.write(STOCKHOLM_CONTENT)
     print(f"Alinhamento Stockholm criado: {sto_file}")
 
-    # Executar hmmbuild
-    cmd = ["hmmbuild", "--amino", output_hmm, sto_file]
-    print(f"Executando: {' '.join(cmd)}")
-    
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    
-    if result.returncode != 0:
-        print(f"ERRO ao executar hmmbuild:")
-        print(result.stderr)
-        sys.exit(1)
-    
-    print(f"HMM proteico gerado com sucesso: {output_hmm}")
+    print("\nFile sto created. Please run hmmbuild manually:")
+    print(f"hmmbuild --amino {output_hmm} {sto_file}")
     
     # Verificar o arquivo gerado
     if os.path.exists(output_hmm):
