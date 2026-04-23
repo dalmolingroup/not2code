@@ -47,12 +47,17 @@ pfam <- readr::read_table(pfam_domtblout, comment = "#", col_names = FALSE)
 #  "acc", "description"
 # )
 
-
-transcripts_with_domain <- as.data.frame(pfam) %>%
-  dplyr::filter(X7 <= pfam_evalue) %>%
-  mutate(transcript_id = str_remove(X1, "\\.p[0-9]+$")) %>% # Remove .p1, .p2 etc
-  distinct(transcript_id) %>% 
-  mutate(domain_present = "yes")
+# Handle empty pfam file (no Pfam domain hits - common with test data)
+if (nrow(pfam) == 0 || !("X7" %in% colnames(pfam))) {
+  transcripts_with_domain <- data.frame(transcript_id = character(0),
+                                        domain_present = character(0))
+} else {
+  transcripts_with_domain <- as.data.frame(pfam) %>%
+    dplyr::filter(X7 <= pfam_evalue) %>%
+    mutate(transcript_id = str_remove(X1, "\\.p[0-9]+$")) %>% # Remove .p1, .p2 etc
+    distinct(transcript_id) %>%
+    mutate(domain_present = "yes")
+}
 
 gtf_complete <- merge(dup_reference_annot, transcripts_with_domain, by = "transcript_id", all.x = T)
 gtf_complete <- merge(gtf_complete, PLEK[,c("transcript_id", "PLEK")], by = "transcript_id", all.x = T)
@@ -70,8 +75,8 @@ gtf_lncRNA <- gtf_complete %>% filter(transcript_id %in% lncRNA) %>%
   mutate(transcript_biotype = ifelse(type == "transcript", "lncRNA", ""))
 
 
-rtracklayer::export(gtf_lncRNA, "gtf_lncRNA.gtf", format = gtf)
-rtracklayer::export(gtf_complete, "gtf_complete.gtf", format = gtf)
+rtracklayer::export(gtf_lncRNA, "gtf_lncRNA.gtf", format = "GTF")
+rtracklayer::export(gtf_complete, "gtf_complete.gtf", format = "GTF")
 
 rm(dup_reference_annot, gtf_complete, lncRNA)
 
@@ -122,7 +127,7 @@ combined_stringtie_ncbi <- dplyr::bind_rows(reference_filter, gtf_lncRNA)
 sum(gtf_lncRNA$transcript_id %in% reference$transcript_id) #0 is expected
 
 # Exportar como novo GTF
-rtracklayer::export(combined_stringtie_ncbi, "combined_stringtie_ncbi.gtf", format = gtf)
+rtracklayer::export(combined_stringtie_ncbi, "combined_stringtie_ncbi.gtf", format = "GTF")
 
 #rm(combined_stringtie_ncbi, gtf_lncRNA, reference, reference_filter)
 
@@ -154,18 +159,20 @@ combined_stringtie_ncbi_new_names <- combined_stringtie_ncbi_new_names %>%
   dplyr::rename(gene_id_stringtie = gene_id) %>% 
   dplyr::rename(transcript_id = transcript_id_new) %>%
   dplyr::rename(gene_id = gene_id_new) %>% 
-  dplyr::select(seqnames,start, end,width,strand,
-                source, type,score,phase,gene_id,
-                transcript_id,db_xref,gbkey,locus_tag,partial,
-                orig_protein_id,orig_transcript_id,product, transcript_biotype,exon_number,
-                pseudo,PLEK,transcript_length,peptide_length,CPC2,
-                xloc,class_code,tss_id,gene_name,cmp_ref,
-                transcript_id_stringtie,gene_id_stringtie)
+  dplyr::select(any_of(c(seqnames="seqnames", start="start", end="end", width="width", strand="strand",
+                source="source", type="type", score="score", phase="phase", gene_id="gene_id",
+                transcript_id="transcript_id", db_xref="db_xref", gbkey="gbkey", locus_tag="locus_tag", partial="partial",
+                orig_protein_id="orig_protein_id", orig_transcript_id="orig_transcript_id", product="product",
+                transcript_biotype="transcript_biotype", exon_number="exon_number",
+                pseudo="pseudo", PLEK="PLEK", transcript_length="transcript_length",
+                peptide_length="peptide_length", CPC2="CPC2",
+                xloc="xloc", class_code="class_code", tss_id="tss_id", gene_name="gene_name", cmp_ref="cmp_ref",
+                transcript_id_stringtie="transcript_id_stringtie", gene_id_stringtie="gene_id_stringtie")))
 
 combined_stringtie_ncbi_new_names %>% dplyr::select(gene_id,gene_id_stringtie,
                                                     transcript_id, transcript_id_stringtie, class_code)
 
-rtracklayer::export(combined_stringtie_ncbi_new_names, "combined_stringtie_ncbi_new_names.gtf", format = gtf)
+rtracklayer::export(combined_stringtie_ncbi_new_names, "combined_stringtie_ncbi_new_names.gtf", format = "GTF")
 
     cat('"', Sys.getenv("TASK_PROCESS", "SELECT_LNCRNAS"), '":\n', file="versions.yml", sep="")
     cat('    r-base: "', R.version.string, '"\n', file="versions.yml", append=TRUE, sep="")

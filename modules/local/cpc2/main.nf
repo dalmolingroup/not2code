@@ -2,14 +2,13 @@ process CPC2 {
     tag "$meta.id"
     label 'process_medium'
 
-    conda "bioconda::cpc2=1.0.1 conda-forge::libsvm=3.25"
+    conda "bioconda::cpc2=1.0.1"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-    'community.wave.seqera.io/library/biopython_numpy_python:453440b12d89d654' :
-    'community.wave.seqera.io/library/biopython_numpy_python:453440b12d89d654' }"
-    
+        'https://depot.galaxyproject.org/singularity/cpc2:1.0.1--hdfd78af_0' :
+        'quay.io/biocontainers/cpc2:1.0.1--hdfd78af_0' }"
+
     input:
     tuple val(meta), path(fasta)
-    path(cpc2)
 
     output:
     tuple val(meta), path("*.txt"), emit: cpc2_results
@@ -28,17 +27,39 @@ process CPC2 {
     echo "Arquivo FASTA de entrada: ${fasta}" >> ${prefix}.log
     echo "Arquivo de saída: ${prefix}_CPC2_output.txt" >> ${prefix}.log
     echo "Data/hora de início: \$(date)" >> ${prefix}.log
-    echo "Modelos SVM: svm-predict, svm-scale" >> ${prefix}.log
-    
+
     # Contar número de sequências no arquivo FASTA
     seq_count=\$(grep -c "^>" ${fasta})
     echo "Número de sequências a serem analisadas: \$seq_count" >> ${prefix}.log
-    
-    python ${cpc2}/bin/CPC2.py -i ${fasta} -o ${prefix}
 
-    
+    # CPC2.py hardcodes svm-predict/svm-scale at ../libs/libsvm/libsvm-3.18/ relative
+    # to its own location (/usr/local/bin/). This path is non-writable when Docker runs
+    # as the host user (-u uid:gid, set in nextflow.config docker.runOptions).
+    # It also imports seqio as a sibling Python module from /usr/local/bin/.
+    #
+    # Fix: copy CPC2.py to the work dir, patch lib_dir to a writable local cpc2_libs/
+    # subdir (with symlinks to svm-predict/svm-scale), patch data_dir to the real
+    # /usr/local/data/ (where cpc2.model and cpc2.range live), and export PYTHONPATH
+    # so seqio.py can be found.
+    mkdir -p cpc2_libs/libsvm/libsvm-3.18/
+    ln -sf \$(which svm-predict) cpc2_libs/libsvm/libsvm-3.18/svm-predict
+    ln -sf \$(which svm-scale)   cpc2_libs/libsvm/libsvm-3.18/svm-scale
+
+    cp \$(which CPC2.py) ./CPC2_patched.py
+    chmod +x ./CPC2_patched.py
+    ABS_LIBS=\$(realpath cpc2_libs)
+
+    sed -i "s|lib_dir = script_dir + \\"/../libs/\\"|lib_dir = '\${ABS_LIBS}/'|"   ./CPC2_patched.py
+    sed -i 's|data_dir = script_dir + "/../data/"|data_dir = "/usr/local/data/"|'   ./CPC2_patched.py
+
+    PYTHONPATH=/usr/local/bin python ./CPC2_patched.py \\
+        -i ${fasta} \\
+        -o ${prefix} \\
+        ${args} \\
+        2>> ${prefix}.log
+
     echo "Data/hora de término: \$(date)" >> ${prefix}.log
-    
+
     # Criar arquivo de versões
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -49,7 +70,6 @@ process CPC2 {
     """
 
     stub:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${prefix}_CPC2_output.txt
@@ -57,9 +77,9 @@ process CPC2 {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        cpc2: \$(CPC2.py --version 2>&1 | grep -oP 'CPC2-\\K[0-9.]+' || echo "1.0.1")
-        python: \$(python --version 2>&1 | grep -oP 'Python \\K[0-9.]+')
-        libsvm: \$(svm-predict 2>&1 | head -1 | grep -oP 'libsvm version \\K[0-9.]+' || echo "3.25")
+        cpc2: "1.0.1"
+        python: "3.9"
+        libsvm: "3.25"
     END_VERSIONS
     """
 }

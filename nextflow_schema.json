@@ -1,5 +1,5 @@
 {
-    "$schema": "http://json-schema.org/draft-07/schema",
+    "$schema": "https://json-schema.org/draft-07/schema",
     "$id": "https://raw.githubusercontent.com/nf-core/nottocode/master/nextflow_schema.json",
     "title": "nf-core/nottocode pipeline parameters",
     "description": "lnc finder",
@@ -292,5 +292,52 @@
         {
             "$ref": "#/definitions/generic_options"
         }
-    ]
+    ],
+    "properties": {
+        "tpm_threshold": {
+            "type": "number",
+            "default": 0.1
+        },
+        "pfam_db": {
+            "type": "string"
+        },
+        "multiqc_replace_names": {
+            "type": "string"
+        },
+        "multiqc_sample_names": {
+            "type": "string"
+        },
+        "mstrg_prep_script": {
+            "type": "string",
+            "default": "/home/gleison/Downloads/not2code_tests/not2code/assets/mstrg_prep.pl"
+        },
+        "plek": {
+            "type": "string",
+            "default": "/home/gleison/Downloads/not2code_tests/not2code/assets/PLEK.1.2.tar.xz"
+        },
+        "lncselect": {
+            "type": "string",
+            "default": "/home/gleison/Downloads/not2code_tests/not2code/assets/lncselect.R"
+        },
+        "filter_by_tpm": {
+            "type": "boolean",
+            "default": true
+        },
+        "reference_genome": {
+            "type": "string"
+        },
+        "reference_gtf": {
+            "type": "string"
+        },
+        "validationSkipDuplicateCheck": {
+            "type": "boolean",
+            "default": true
+        },
+        "validationS3PathCheck": {
+            "type": "boolean"
+        },
+        "monochromeLogs": {
+            "type": "boolean"
+        }
+    }
 }
