@@ -87,27 +87,81 @@ graph TD
 > [!NOTE]
 > If you are new to Nextflow and nf-core, please refer to [this page](https://nf-co.re/docs/usage/installation) on how to set-up Nextflow. Make sure to [test your setup](https://nf-co.re/docs/usage/introduction#how-to-run-a-pipeline) with `-profile test` before running the workflow on actual data.
 
+The `nf-core/nottocode` pipeline requires assembled transcriptomes (GTF files) as input. A typical workflow involves running `nf-core/rnaseq` first to align reads and assemble transcripts, followed by `nf-core/nottocode` to identify lncRNAs.
 
-First, prepare a samplesheet with your input data that looks as follows:
+### 1. Run nf-core/rnaseq
 
-`samplesheet.csv`:
+First, run `nf-core/rnaseq` with an aligner like HISAT2. You should also ensure StringTie is properly parameterized to preserve transcripts that are candidates for lncRNAs (e.g. modifying minimum junction coverage, minimum read coverage, and minimum length). 
+
+Here is an example of creating a custom configuration for StringTie and running the `rnaseq` pipeline:
+
+```bash
+# Create custom StringTie configuration
+echo "process {
+    withName: 'NFCORE_RNASEQ:RNASEQ:STRINGTIE_STRINGTIE' {
+        ext.args = { 
+            [
+                '-j 3',
+                '-c 3',
+                '-m 200',
+                params.stringtie_extra_args ?: ''
+            ].join(' ').trim() 
+        }
+    }
+}" > stringtie.config
+
+# Run nf-core/rnaseq
+nextflow run nf-core/rnaseq \
+  -profile docker \
+  -r 3.19.0 \
+  --input rnaseq_samplesheet.csv \
+  --outdir results_rnaseq \
+  --fasta /path/to/genome.fna \
+  --gtf /path/to/genome.gtf \
+  --trimmer fastp \
+  --aligner hisat2 \
+  --skip_pseudo_alignment \
+  -c stringtie.config
+```
+
+### 2. Prepare the input samplesheet
+
+After the `rnaseq` pipeline finishes, you need to prepare a samplesheet for `nottocode`. The samplesheet requires two columns: `sample` and `gtf`. You can create this automatically from the `rnaseq` StringTie outputs using the following bash script:
+
+```bash
+# Output samplesheet file
+output="gtf_samplesheet.csv"
+
+# Write header
+echo "sample,gtf" > "$output"
+
+# List .transcripts.gtf files and process each one
+for path in results_rnaseq/hisat2/stringtie/*transcripts.gtf; do
+    sample=$(basename "$path" .transcripts.gtf)
+    echo "$sample,$(realpath $path)" >> "$output"
+done
+```
+
+This will create a `gtf_samplesheet.csv` that looks like this:
 
 ```csv
 sample,gtf
-CONTROL_REP1,AEG588A1.gtf
+CONTROL_REP1,/path/to/results_rnaseq/hisat2/stringtie/CONTROL_REP1.transcripts.gtf
 ```
 
-Each row represents a gtf file.
+### 3. Run nf-core/nottocode
 
-Now, you can run the pipeline using:
+Now, you can run the `nottocode` pipeline using the generated samplesheet:
 
 ```bash
 nextflow run nf-core/nottocode \
-  --input /path/to/samplesheet.csv \
-  --reference_gtf /path/to/genome.gff \
+  -profile docker \
+  --input gtf_samplesheet.csv \
+  --reference_gff /path/to/genome.gff \
+  --reference_gtf /path/to/genome.gtf \
   --reference_genome /path/to/genome.fna \
   --pfam_db /path/to/Pfam-A.hmm \
-  --outdir results
+  --outdir results_nottocode
 ```
 
 
