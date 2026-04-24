@@ -1,0 +1,13 @@
+##gff-version 2
+chr1	StringTie	transcript	1000	2000	.	+	.	transcript_id "novel_lncRNA_1"; gene_id "gene_lncRNA_1"; transcript_biotype "lncRNA"; class_code "u";
+chr1	StringTie	exon	1000	1200	.	+	.	transcript_id "novel_lncRNA_1"; gene_id "gene_lncRNA_1"; transcript_biotype "";
+chr1	StringTie	exon	1800	2000	.	+	.	transcript_id "novel_lncRNA_1"; gene_id "gene_lncRNA_1"; transcript_biotype "";
+chr1	Ensembl	transcript	3000	8000	.	-	.	transcript_id "ENST000001"; gene_id "ENSG000001"; transcript_biotype "protein_coding";
+chr1	Ensembl	exon	7500	8000	.	-	.	transcript_id "ENST000001"; gene_id "ENSG000001"; transcript_biotype "protein_coding";
+chr1	Ensembl	exon	6000	6500	.	-	.	transcript_id "ENST000001"; gene_id "ENSG000001"; transcript_biotype "protein_coding";
+chr1	Ensembl	exon	3000	3500	.	-	.	transcript_id "ENST000001"; gene_id "ENSG000001"; transcript_biotype "protein_coding";
+chr1	NCBI	transcript	10000	15000	.	+	.	transcript_id "XM_000001"; gene_id "LOC000001"; gbkey "mRNA";
+chr1	NCBI	exon	10000	11000	.	+	.	transcript_id "XM_000001"; gene_id "LOC000001"; gbkey "mRNA";
+chr1	NCBI	exon	14000	15000	.	+	.	transcript_id "XM_000001"; gene_id "LOC000001"; gbkey "mRNA";
+chr1	Ensembl	transcript	20000	20070	.	+	.	transcript_id "ENST_tRNA_1"; gene_id "ENSG_tRNA_1"; transcript_biotype "tRNA";
+chr1	Ensembl	exon	20000	20070	.	+	.	transcript_id "ENST_tRNA_1"; gene_id "ENSG_tRNA_1"; transcript_biotype "tRNA";

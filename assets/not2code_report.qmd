@@ -46,35 +46,48 @@ transcripts_complete <- gtf_complete %>%
 <style>
 .value-box-container {
   display: flex;
-  gap: 20px;
-  margin-bottom: 30px;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
 }
 .value-box {
-  background-color: #f8f9fa;
-  border-left: 5px solid #2d4263;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   flex: 1;
+  border: 1px solid rgba(0,0,0,0.05);
+  border-left: 6px solid #2d4263;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.value-box:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 .value-box h3 {
-  margin: 0;
-  font-size: 14px;
-  color: #6c757d;
+  margin: 0 0 0.5rem 0 !important;
+  font-size: 0.85rem !important;
+  color: #6c757d !important;
   text-transform: uppercase;
-  font-weight: bold;
+  font-weight: 700 !important;
+  letter-spacing: 0.5px;
+  line-height: 1.2;
 }
 .value-box .value {
-  font-size: 32px;
-  font-weight: bold;
-  color: #2d4263;
-  margin-top: 10px;
+  font-size: 2.5rem !important;
+  font-weight: 800 !important;
+  color: #2d4263 !important;
+  margin: 0 !important;
+  line-height: 1;
 }
 .value-box.highlight {
   border-left-color: #ff7b54;
+  background: linear-gradient(145deg, #ffffff, #fffaf8);
 }
 .value-box.highlight .value {
-  color: #ff7b54;
+  color: #ff7b54 !important;
 }
 </style>
 
@@ -130,22 +143,24 @@ funnel_data$Step <- factor(funnel_data$Step, levels = funnel_data$Step)
 ```
 
 ```{r value-boxes, results='asis'}
+cat("```{=html}\n")
 cat(paste0('
 <div class="value-box-container">
   <div class="value-box">
     <h3>Assembled Transcripts</h3>
-    <div class="value">', total_candidates, '</div>
+    <div class="value">', format(total_candidates, big.mark=","), '</div>
   </div>
   <div class="value-box">
     <h3>Putative Candidates (u, i, x)</h3>
-    <div class="value">', nrow(pass_class), '</div>
+    <div class="value">', format(nrow(pass_class), big.mark=","), '</div>
   </div>
   <div class="value-box highlight">
     <h3>Validated lncRNAs</h3>
-    <div class="value">', nrow(pass_pfam), '</div>
+    <div class="value">', format(nrow(pass_pfam), big.mark=","), '</div>
   </div>
 </div>
 '))
+cat("\n```\n")
 ```
 
 ```{r funnel-plot}
@@ -233,10 +248,27 @@ transcripts_combined <- transcripts_combined %>%
   left_join(exon_counts, by = "transcript_id") %>%
   mutate(
     n_exons = replace_na(n_exons, 1), # If no exon in associated GTF, assume 1
-    # Define category for comparison. lncRNAs have source StringTie and new id. 
-    # (or we can use transcript_biotype="lncRNA" defined in the pipeline)
-    Category = ifelse(!is.na(transcript_biotype) & transcript_biotype == "lncRNA", "Novel lncRNAs", "Reference mRNAs")
+    Category = ifelse(!is.na(transcript_biotype) & transcript_biotype == "lncRNA", "Novel lncRNAs", "Other Reference")
   )
+
+# Attempt to identify Reference mRNAs based on typical GTF/GFF attributes
+if ("transcript_biotype" %in% colnames(transcripts_combined)) {
+  transcripts_combined <- transcripts_combined %>%
+    mutate(Category = ifelse(Category == "Other Reference" & !is.na(transcript_biotype) & transcript_biotype == "protein_coding", "Reference mRNAs", Category))
+}
+if ("gbkey" %in% colnames(transcripts_combined)) {
+  transcripts_combined <- transcripts_combined %>%
+    mutate(Category = ifelse(Category == "Other Reference" & !is.na(gbkey) & gbkey == "mRNA", "Reference mRNAs", Category))
+}
+
+# If no reference mRNAs were identifiable (e.g. sparse GTF lacking biotypes), fallback to treating all non-lncRNAs as reference mRNAs to avoid breaking the report
+if (!("Reference mRNAs" %in% transcripts_combined$Category)) {
+  transcripts_combined <- transcripts_combined %>%
+    mutate(Category = ifelse(Category == "Other Reference", "Reference mRNAs", Category))
+} else {
+  # Remove the other non-coding RNAs (tRNAs, rRNAs) from the comparison pool for biological accuracy
+  transcripts_combined <- transcripts_combined %>% filter(Category %in% c("Novel lncRNAs", "Reference mRNAs"))
+}
 ```
 
 ```{r custom-colors}
