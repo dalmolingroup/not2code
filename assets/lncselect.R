@@ -140,10 +140,10 @@ combined_stringtie_ncbi_new_names <- as.data.frame(combined_stringtie_ncbi)
 new_names <- combined_stringtie_ncbi_new_names %>% 
   dplyr::filter(type == "transcript") %>% 
   mutate(transcript_id_new = ifelse(source == "StringTie",
-                                    paste0("Pb18_lncRNA", class_code, gsub("MSTRG.", "_", transcript_id)), 
+                                    paste0(prefix, "_lncRNA_", class_code, "_", gsub("MSTRG.", "", transcript_id)), 
                                     transcript_id)) %>% 
   mutate(gene_id_new = ifelse(source == "StringTie",
-                              paste0("Pb18_lncRNA", gsub("MSTRG.", "_", gene_id)), 
+                              paste0(prefix, "_lncRNA_", gsub("MSTRG.", "", gene_id)), 
                               gene_id)) %>% 
   dplyr::select(transcript_id, transcript_id_new, gene_id, gene_id_new) %>% distinct()
 

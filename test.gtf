@@ -1,0 +1,4 @@
+##gff-version 2
+##source-version rtracklayer 1.70.1
+##date 2026-04-24
+chr1	rtracklayer	sequence_feature	1	100	.	+	.

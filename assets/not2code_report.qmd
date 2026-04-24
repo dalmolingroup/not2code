@@ -1,0 +1,416 @@
+---
+title: "Comprehensive Genomic and Structural Characterization of Novel Long Non-Coding RNAs"
+format:
+  html:
+    theme: flatly
+    toc: true
+    toc-depth: 3
+    code-fold: true
+    embed-resources: true
+    page-layout: full
+    df-print: paged
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r setup}
+#| include: false
+library(tidyverse)
+library(ggplot2)
+library(plotly)
+library(rtracklayer)
+
+# Read environment variables (passed by Nextflow)
+gtf_complete_path <- Sys.getenv("GTF_COMPLETE")
+combined_gtf_path <- Sys.getenv("COMBINED_GTF")
+min_length <- as.numeric(Sys.getenv("MIN_LENGTH", unset = "200"))
+
+# For local manual testing:
+if (gtf_complete_path == "") {
+  # Dummy values to test the script in RStudio if necessary
+  # gtf_complete_path <- "gtf_complete.gtf"
+  # combined_gtf_path <- "combined_stringtie_ncbi_new_names.gtf"
+}
+
+# Import GTFs
+gtf_complete <- as.data.frame(rtracklayer::import(gtf_complete_path))
+combined_gtf <- as.data.frame(rtracklayer::import(combined_gtf_path))
+
+# Filter only transcripts (not exons) for the funnel analysis
+transcripts_complete <- gtf_complete %>% 
+  filter(type == "transcript")
+```
+
+<style>
+.value-box-container {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+.value-box {
+  background-color: #f8f9fa;
+  border-left: 5px solid #2d4263;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  flex: 1;
+}
+.value-box h3 {
+  margin: 0;
+  font-size: 14px;
+  color: #6c757d;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+.value-box .value {
+  font-size: 32px;
+  font-weight: bold;
+  color: #2d4263;
+  margin-top: 10px;
+}
+.value-box.highlight {
+  border-left-color: #ff7b54;
+}
+.value-box.highlight .value {
+  color: #ff7b54;
+}
+</style>
+
+## 1. Stepwise Attrition and Orthogonal Filtering of Putative lncRNAs
+
+To confidently isolate long non-coding RNAs from the raw transcriptome assembly, a rigorous orthogonal filtering pipeline was applied. Initial assembled transcripts were cross-referenced against the reference genome annotation to retain only those exhibiting intergenic (`u`), intronic (`i`), or antisense (`x`) orientations. Subsequently, strict size thresholds and robust coding-potential evaluations (via CPC2, PLEK, and HMMER Pfam domain scanning) were imposed to systematically abrogate elements with discernible open reading frames (ORFs) or protein-coding signatures.
+
+```{r funnel-data}
+# Calculate counts for the funnel
+total_candidates <- nrow(transcripts_complete)
+
+# 1. GFFCompare Filter (u, i, x)
+pass_class <- transcripts_complete %>% 
+  filter(class_code %in% c("x", "i", "u"))
+
+# 2. Length Filter
+pass_length <- pass_class %>% 
+  filter(transcript_length >= min_length)
+
+# 3. CPC2 Filter
+pass_cpc2 <- pass_length
+if ("CPC2" %in% colnames(pass_cpc2)) {
+  pass_cpc2 <- pass_cpc2 %>% filter(CPC2 == "noncoding")
+}
+
+# 4. PLEK Filter
+pass_plek <- pass_cpc2
+if ("PLEK" %in% colnames(pass_plek)) {
+  pass_plek <- pass_plek %>% filter(PLEK == "Non-coding")
+}
+
+# 5. Pfam (HMMER) Filter
+pass_pfam <- pass_plek
+if ("domain_present" %in% colnames(pass_pfam)) {
+  pass_pfam <- pass_pfam %>% filter(is.na(domain_present))
+}
+
+# Funnel Table
+funnel_data <- tibble(
+  Step = c("Initial Candidates", "GFFCompare Classes (x,i,u)", "Minimum Length", "Non-coding (CPC2)", "Non-coding (PLEK)", "No Domains (Pfam) - Final lncRNAs"),
+  Transcripts = c(
+    total_candidates,
+    nrow(pass_class),
+    nrow(pass_length),
+    nrow(pass_cpc2),
+    nrow(pass_plek),
+    nrow(pass_pfam)
+  )
+)
+
+# Add Order
+funnel_data$Step <- factor(funnel_data$Step, levels = funnel_data$Step)
+```
+
+```{r value-boxes, results='asis'}
+cat(paste0('
+<div class="value-box-container">
+  <div class="value-box">
+    <h3>Assembled Transcripts</h3>
+    <div class="value">', total_candidates, '</div>
+  </div>
+  <div class="value-box">
+    <h3>Putative Candidates (u, i, x)</h3>
+    <div class="value">', nrow(pass_class), '</div>
+  </div>
+  <div class="value-box highlight">
+    <h3>Validated lncRNAs</h3>
+    <div class="value">', nrow(pass_pfam), '</div>
+  </div>
+</div>
+'))
+```
+
+```{r funnel-plot}
+#| fig-height: 5
+#| fig-width: 8
+#| fig-cap: "**Figure 1. Pipeline Attrition Funnel.** The bar chart displays the absolute count of transcripts (y-axis) retained at each sequential filtering stage (x-axis). Transcripts are filtered based on reference overlap (class codes), length constraints, sequence-derived coding potential (CPC2 and PLEK), and the presence of characterized Pfam protein domains."
+p_funnel <- ggplot(funnel_data, aes(x = Step, y = Transcripts, fill = Transcripts)) +
+  geom_bar(stat = "identity", color = "white", alpha = 0.9) +
+  geom_text(aes(label = Transcripts), vjust = -0.5, fontface = "bold", color = "#2d4263") +
+  scale_fill_viridis_c(option = "mako", direction = -1) +
+  theme_minimal(base_family = "sans") +
+  labs(
+    title = "Transcript Survival at Each Filtering Step",
+    y = "Number of Transcripts",
+    x = ""
+  ) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, face = "bold"),
+    legend.position = "none",
+    plot.title = element_text(face = "bold", size = 16, color = "#2d4263"),
+    panel.grid.major.x = element_blank()
+  )
+
+ggplotly(p_funnel, tooltip = c("x", "y")) %>% layout(hovermode = "closest")
+```
+
+---
+
+## 2. Genomic Context of Identified lncRNAs
+
+The positional relationship between the newly identified lncRNAs and the established protein-coding loci provides critical insights into their putative regulatory roles. The validated transcripts were classified based on their overlapping coordinates (GFFCompare class codes).
+
+```{r class-codes}
+#| fig-height: 5
+#| fig-width: 6
+#| fig-cap: "**Figure 2. Genomic Classification.** The pie chart illustrates the proportional distribution of the validated lncRNAs across distinct genomic contexts: intergenic regions (u), intronic regions (i), and antisense overlaps (x)."
+lncrnas_final <- pass_pfam
+
+class_counts <- lncrnas_final %>% 
+  count(class_code) %>% 
+  mutate(
+    Description = case_when(
+      class_code == "u" ~ "Intergenic (u)",
+      class_code == "i" ~ "Intronic (i)",
+      class_code == "x" ~ "Antisense (x)",
+      TRUE ~ as.character(class_code)
+    ),
+    Percentage = n / sum(n) * 100,
+    Label = sprintf("%s\n%d (%.1f%%)", Description, n, Percentage)
+  )
+
+p_pie <- plot_ly(class_counts, labels = ~Description, values = ~n, type = 'pie',
+                 textinfo = 'label+percent',
+                 hoverinfo = 'text',
+                 text = ~Label,
+                 marker = list(colors = RColorBrewer::brewer.pal(max(3, nrow(class_counts)), "Set2"))) %>%
+  layout(title = list(text = "Class Distribution (GFFCompare)", 
+                      font = list(color = "#2d4263", size = 14, family = "sans")),
+         showlegend = TRUE)
+
+p_pie
+```
+
+---
+
+## 3. Structural and Biological Characterization (lncRNAs vs mRNAs)
+
+To structurally validate the discovered lncRNAs and confirm their conformity to expected biological paradigms, we contrasted their intrinsic architectural characteristics (e.g., mature sequence length, exon count, and splicing frequency) with the established protein-coding transcripts (mRNAs) present in the reference annotation.
+
+```{r prep-comparison}
+# Separate reference mRNAs and discovered lncRNAs from the combined file
+transcripts_combined <- combined_gtf %>% filter(type == "transcript")
+exons_combined <- combined_gtf %>% filter(type == "exon")
+
+# Count exons and mature length per transcript
+exon_counts <- exons_combined %>%
+  group_by(transcript_id) %>%
+  summarise(
+    n_exons = n(),
+    mature_length = sum(width)
+  )
+
+# Join with transcripts
+transcripts_combined <- transcripts_combined %>%
+  left_join(exon_counts, by = "transcript_id") %>%
+  mutate(
+    n_exons = replace_na(n_exons, 1), # If no exon in associated GTF, assume 1
+    # Define category for comparison. lncRNAs have source StringTie and new id. 
+    # (or we can use transcript_biotype="lncRNA" defined in the pipeline)
+    Category = ifelse(!is.na(transcript_biotype) & transcript_biotype == "lncRNA", "Novel lncRNAs", "Reference mRNAs")
+  )
+```
+
+```{r custom-colors}
+custom_colors <- c("Novel lncRNAs" = "#ff7b54", "Reference mRNAs" = "#2d4263")
+```
+
+### 3.1 Mature Transcript Length Distribution
+
+Biologically, lncRNAs exhibit a significantly shorter mature sequence length relative to protein-coding mRNAs due to the lack of extended open reading frames. The density plot below illustrates the size distribution (in nucleotides) of both populations.
+
+```{r length-density}
+#| fig-height: 5
+#| fig-width: 8
+#| fig-cap: "**Figure 3. Mature Transcript Length Distribution.** Density plot representing the log10-transformed length of mature transcripts (nucleotides). Lengths were calculated by summing the widths of all constituent exons for each transcript variant."
+# Note: transcript_length may not be present for reference mRNAs.
+# We calculate mature length using sum of exon widths.
+# Fallback to transcript width if exons are missing.
+transcripts_combined <- transcripts_combined %>% 
+  mutate(length_bp = coalesce(mature_length, width))
+
+p_length <- ggplot(transcripts_combined, aes(x = log10(length_bp), fill = Category, color = Category)) +
+  geom_density(alpha = 0.6, linewidth = 0.8) +
+  theme_minimal(base_family = "sans") +
+  scale_fill_manual(values = custom_colors) +
+  scale_color_manual(values = custom_colors) +
+  labs(
+    title = "Transcript Length Distribution",
+    x = "Length (Log10 bp)",
+    y = "Density"
+  ) +
+  theme(plot.title = element_text(face = "bold", size = 14, color = "#2d4263"),
+        panel.grid.minor = element_blank())
+
+ggplotly(p_length) %>% layout(hovermode = "x unified")
+```
+
+### 3.2 Exon Count Distribution
+
+LncRNAs are characteristically mono- or bi-exonic in the vast majority of eukaryotic organisms, contrasting sharply with mRNAs which typically undergo extensive multi-exonic splicing.
+
+```{r exon-boxplot}
+#| fig-height: 5
+#| fig-width: 8
+#| fig-cap: "**Figure 4. Exon Count Distribution.** Boxplot depicting the number of exons per transcript (log2 scale) for both novel lncRNAs and reference mRNAs."
+p_exons <- ggplot(transcripts_combined, aes(x = Category, y = n_exons, fill = Category)) +
+  geom_boxplot(alpha = 0.7, outlier.alpha = 0.3, color = "#2d4263") +
+  theme_minimal(base_family = "sans") +
+  scale_fill_manual(values = custom_colors) +
+  scale_y_continuous(trans = "log2") +
+  labs(
+    title = "Number of Exons per Transcript (Log2 scale)",
+    x = "",
+    y = "Number of Exons"
+  ) +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(face = "bold", size = 14, color = "#2d4263"),
+    axis.text.x = element_text(face = "bold", size = 12),
+    panel.grid.major.x = element_blank()
+  )
+
+ggplotly(p_exons)
+```
+
+### 3.3 Mono-exonic versus Multi-exonic Proportions
+
+A stark morphological signature of non-coding loci is the overwhelmingly high prevalence of single-exon transcripts.
+
+```{r mono-multi}
+#| fig-height: 5
+#| fig-width: 8
+#| fig-cap: "**Figure 5. Exon Multiplicity Proportion.** Stacked bar chart illustrating the percentage of mono-exonic versus multi-exonic transcripts across the two categories."
+mono_multi <- transcripts_combined %>%
+  mutate(Exon_Type = ifelse(n_exons == 1, "Mono-exonic", "Multi-exonic")) %>%
+  count(Category, Exon_Type) %>%
+  group_by(Category) %>%
+  mutate(Percentage = n / sum(n) * 100,
+         Label = sprintf("%.1f%%", Percentage))
+
+p_mono <- ggplot(mono_multi, aes(x = Category, y = Percentage, fill = Exon_Type, text = paste("Count:", n))) +
+  geom_bar(stat = "identity", position = "fill", color = "white", alpha = 0.9) +
+  geom_text(aes(label = Label), position = position_fill(vjust = 0.5), color = "white", fontface = "bold") +
+  scale_fill_manual(values = c("Mono-exonic" = "#ff7b54", "Multi-exonic" = "#2d4263")) +
+  theme_minimal(base_family = "sans") +
+  scale_y_continuous(labels = scales::percent) +
+  labs(
+    title = "Mono-exonic vs Multi-exonic Transcripts",
+    x = "",
+    y = "Proportion",
+    fill = "Type"
+  ) +
+  theme(
+    plot.title = element_text(face = "bold", size = 14, color = "#2d4263"),
+    axis.text.x = element_text(face = "bold", size = 12),
+    panel.grid.major.x = element_blank()
+  )
+
+ggplotly(p_mono, tooltip = c("fill", "text")) %>% layout(hovermode = "closest")
+```
+
+### 3.4 Isoform Frequency per Gene Locus
+
+LncRNAs tend to exhibit significantly less alternative splicing and fewer transcript variants per gene locus compared to protein-coding genes. We can verify this paradigm by quantifying the number of distinct isoforms originating from each gene.
+
+```{r isoforms}
+#| fig-height: 5
+#| fig-width: 8
+#| fig-cap: "**Figure 6. Isoforms per Gene Locus.** Density plot of the number of unique transcript variants (isoforms) generated per gene locus (log2 scale)."
+isoforms <- transcripts_combined %>%
+  group_by(Category, gene_id) %>%
+  summarise(n_isoforms = n(), .groups = 'drop')
+
+p_iso <- ggplot(isoforms, aes(x = n_isoforms, fill = Category, color = Category)) +
+  geom_density(alpha = 0.6, linewidth = 0.8) +
+  scale_x_continuous(trans = "log2") +
+  scale_fill_manual(values = custom_colors) +
+  scale_color_manual(values = custom_colors) +
+  theme_minimal(base_family = "sans") +
+  labs(
+    title = "Distribution of Isoforms per Gene (Log2)",
+    x = "Number of Transcripts per Gene Locus",
+    y = "Density"
+  ) +
+  theme(
+    plot.title = element_text(face = "bold", size = 14, color = "#2d4263"),
+    panel.grid.minor = element_blank()
+  )
+
+ggplotly(p_iso) %>% layout(hovermode = "x unified")
+```
+
+### 3.5 Individual Exon Length Distribution
+
+The architectural components (individual exons) of lncRNAs can also differ in size distribution compared to mRNAs, often reflecting divergent evolutionary constraints and splicing dynamics.
+
+```{r exon-length}
+#| fig-height: 5
+#| fig-width: 8
+#| fig-cap: "**Figure 7. Exon Length Distribution.** Density plot displaying the log10-transformed length of individual exonic features across all transcripts."
+exons_annotated <- exons_combined %>%
+  left_join(transcripts_combined %>% select(transcript_id, Category), by = "transcript_id")
+
+p_exon_len <- ggplot(exons_annotated, aes(x = log10(width), fill = Category, color = Category)) +
+  geom_density(alpha = 0.6, linewidth = 0.8) +
+  scale_fill_manual(values = custom_colors) +
+  scale_color_manual(values = custom_colors) +
+  theme_minimal(base_family = "sans") +
+  labs(
+    title = "Individual Exon Length Distribution",
+    x = "Exon Length (Log10 bp)",
+    y = "Density"
+  ) +
+  theme(
+    plot.title = element_text(face = "bold", size = 14, color = "#2d4263"),
+    panel.grid.minor = element_blank()
+  )
+
+ggplotly(p_exon_len) %>% layout(hovermode = "x unified")
+```
+
+## 4. Final lncRNA Candidates
+
+The table below lists all `r nrow(pass_pfam)` identified novel lncRNAs. You can sort and search through the candidates.
+
+```{r candidates-table}
+final_table <- pass_pfam %>%
+  select(transcript_id, gene_id, class_code, transcript_length, n_exons = exon_number) %>%
+  arrange(desc(transcript_length))
+
+# Print as a paged dataframe
+final_table
+```
+
+## Summary of Generated Files
+Below is a summary of the final files saved by the pipeline in the output directory:
+- `gtf_lncRNA.gtf`: Contains exclusively the discovered lncRNAs.
+- `combined_stringtie_ncbi_new_names.gtf`: Unified genomic annotation containing the original reference and the novel lncRNAs.

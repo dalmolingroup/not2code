@@ -18,6 +18,7 @@ include { SELECT_LNCRNAS         } from '../modules/local/selectlnc/main'
 include { XZ_DECOMPRESS          } from '../modules/nf-core/xz/decompress/main'  
 include { UNTAR                  } from '../modules/nf-core/untar/main'  
 include { MULTIQC                } from '../modules/nf-core/multiqc/main'
+include { REPORT                 } from '../modules/local/report/main'
 include { paramsSummaryMap       } from 'plugin/nf-validation'
 include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
@@ -312,6 +313,17 @@ workflow NOTTOCODE {
     )
      ch_versions = ch_versions.mix(SELECT_LNCRNAS.out.versions)
 
+    //
+    // MODULE: Report
+    //
+    ch_report_script = file("${projectDir}/assets/not2code_report.qmd")
+    
+    REPORT (
+        SELECT_LNCRNAS.out.complete_gtf,
+        SELECT_LNCRNAS.out.final_gtf,
+        ch_report_script
+    )
+    ch_versions = ch_versions.mix(REPORT.out.versions)
 
     //
     // Collate and save software versions
