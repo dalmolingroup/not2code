@@ -26,7 +26,7 @@ process TRANSDECODER_LONGORFS {
     
     script:
     def args = task.ext.args ?: ''
-    prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: "${meta.id}"
     def output_dir = "${prefix}.transdecoder_dir"
     
     """
