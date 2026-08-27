@@ -14,10 +14,10 @@ process TRANSDECODER_LONGORFS {
     tuple val(meta), path(fasta_file)
     
     output:
-    tuple val(meta), path("${prefix}.transdecoder_dir/"), emit: transdecoder_dir
-    tuple val(meta), path("${prefix}.transdecoder_dir/longest_orfs.pep"), emit: longest_orfs_pep
-    tuple val(meta), path("${prefix}.transdecoder_dir/longest_orfs.gff3"), emit: longest_orfs_gff3
-    tuple val(meta), path("${prefix}.transdecoder_dir/longest_orfs.cds"), emit: longest_orfs_cds
+    tuple val(meta), path("${task.ext.prefix ?: meta.id}.transdecoder_dir/"), emit: transdecoder_dir
+    tuple val(meta), path("${task.ext.prefix ?: meta.id}.transdecoder_dir/longest_orfs.pep"), emit: longest_orfs_pep
+    tuple val(meta), path("${task.ext.prefix ?: meta.id}.transdecoder_dir/longest_orfs.gff3"), emit: longest_orfs_gff3
+    tuple val(meta), path("${task.ext.prefix ?: meta.id}.transdecoder_dir/longest_orfs.cds"), emit: longest_orfs_cds
     tuple val(meta), path("*.log"), emit: log
     path "versions.yml", emit: versions
     
