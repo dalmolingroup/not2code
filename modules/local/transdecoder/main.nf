@@ -103,7 +103,7 @@ process TRANSDECODER_LONGORFS {
     """
     
     stub:
-    prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: "${meta.id}"
     """
     mkdir -p ${prefix}.transdecoder_dir
     touch ${prefix}.transdecoder_dir/longest_orfs.pep
